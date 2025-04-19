@@ -4,11 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Global Variables
+// Variaveis globais
 Tabuleiro stack[STACK_SIZE];
 int topoStack = -1;
 
-// Function Definitions
+// Definição das funções
 void lerEstadoJogo(char *nomearquivo, char tabuleiro[1000][1000], int *linhas, int *colunas) {
     FILE *f = fopen(nomearquivo, "r");
     if (f == NULL) {
