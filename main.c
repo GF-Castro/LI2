@@ -1,8 +1,7 @@
 #include "projeto.h"
-#include "projeto.c"
 #include <stdio.h>
 #include <string.h>
-#include <stdlib.h> // Usei Malloc e Free
+#include <stdlib.h>
 
 int main() {
     char comando[1000];
@@ -37,7 +36,7 @@ int main() {
                 continue;
             }
 
-            // Guarda o tabuleiro atual numa stack
+            // Guarda o tabuleiro atual na stack
             Tabuleiro currentState;
             memcpy(currentState.tabuleiro, tabuleiro, sizeof(tabuleiro));
             currentState.linhas = linhas;
@@ -53,11 +52,10 @@ int main() {
             imprimirTabuleiro(tabuleiro, linhas, colunas);
         } else if (strcmp(comando, "d") == 0) {
             if (topoStack == -1) {
-                printf("Nenhuma ação para desfazer.\n");
+                printf("Nenhum estado para desfazer.\n");
                 continue;
             }
 
-            // Desfaz a última ação
             Tabuleiro previousState = desempilhar();
             memcpy(tabuleiro, previousState.tabuleiro, sizeof(tabuleiro));
             linhas = previousState.linhas;
@@ -65,7 +63,8 @@ int main() {
 
             imprimirTabuleiro(tabuleiro, linhas, colunas);
         } else {
-            printf("Comando inválido.\n");
+            printf("Comando inválido. Tente novamente.\n");
+            imprimir_comandos();
         }
     }
 
