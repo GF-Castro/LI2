@@ -5,10 +5,9 @@
 
 int main() {
     char comando[1000];
-    char tabuleiro[1000][1000];
-    int linhas = 0, colunas = 0;
-    int x, y;
     char coord[10];
+    int x, y;
+    Tabuleiro t;
 
     imprimir_comandos();
 
@@ -20,12 +19,14 @@ int main() {
         }
 
         if (strcmp(comando, "l") == 0) {
-            lerEstadoJogo("tabuleiro.txt", tabuleiro, &linhas, &colunas);
-            imprimirTabuleiro(tabuleiro, linhas, colunas);
-        } else if (strcmp(comando, "s") == 0) {
+            lerJogo("tabuleiro.txt", &t);  // lê e guarda estado anterior
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        } 
+        else if (strcmp(comando, "s") == 0) {
             printf("Jogo encerrado.\n");
             break;
-        } else if (strcmp(comando, "b") == 0 || strcmp(comando, "r") == 0) {
+        } 
+        else if (strcmp(comando, "b") == 0 || strcmp(comando, "r") == 0) {
             if (scanf("%s", coord) != 1) {
                 printf("Erro a ler coordenada.\n");
                 continue;
@@ -36,33 +37,31 @@ int main() {
                 continue;
             }
 
-            // Guarda o tabuleiro atual na stack
-            Tabuleiro currentState;
-            memcpy(currentState.tabuleiro, tabuleiro, sizeof(tabuleiro));
-            currentState.linhas = linhas;
-            currentState.colunas = colunas;
-            stacks(currentState);
+            // Guarda o estado atual na stack antes de modificar
+            guardar_estado(&t);
 
-            if (strcmp(comando, "b") == 0) {
-                pintarDeBranco(tabuleiro, linhas, colunas, x, y);
-            } else {
-                riscar(tabuleiro, linhas, colunas, x, y);
-            }
+            if (strcmp(comando, "b") == 0)
+                pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, x, y);
+            else
+                riscar(t.tabuleiro, t.linhas, t.colunas, x, y);
 
-            imprimirTabuleiro(tabuleiro, linhas, colunas);
-        } else if (strcmp(comando, "d") == 0) {
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        } 
+        else if (strcmp(comando, "d") == 0) {
             if (topoStack == -1) {
                 printf("Nenhum estado para desfazer.\n");
                 continue;
             }
 
-            Tabuleiro previousState = desempilhar();
-            memcpy(tabuleiro, previousState.tabuleiro, sizeof(tabuleiro));
-            linhas = previousState.linhas;
-            colunas = previousState.colunas;
+            Tabuleiro anterior = desempilhar();
+            t = anterior;
 
-            imprimirTabuleiro(tabuleiro, linhas, colunas);
-        } else {
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        } 
+        else if (strcmp(comando, "v") == 0) {
+            verificar_estado(t.tabuleiro, t.linhas, t.colunas);
+        }        
+        else {
             printf("Comando inválido. Tente novamente.\n");
             imprimir_comandos();
         }

@@ -8,33 +8,6 @@
 Tabuleiro stack[STACK_SIZE];
 int topoStack = -1;
 
-// Definição das funções
-void lerEstadoJogo(char *nomearquivo, char tabuleiro[1000][1000], int *linhas, int *colunas) {
-    FILE *f = fopen(nomearquivo, "r");
-    if (f == NULL) {
-        printf("Erro ao abrir o ficheiro.\n");
-        return;
-    }
-
-    if (fscanf(f, "%d %d", colunas, linhas) != 2) {
-        fclose(f);
-        printf("Erro ao ler dimensões.\n");
-        return;
-    }
-
-    for (int i = 0; i < *linhas; i++) {
-        for (int j = 0; j < *colunas; j++) {
-            if (fscanf(f, " %c", &tabuleiro[i][j]) != 1) {
-                printf("Erro ao ler o tabuleiro na posição [%d][%d].\n", i, j);
-                fclose(f);
-                return;
-            }
-        }
-    }
-
-    fclose(f);
-}
-
 void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -103,5 +76,102 @@ Tabuleiro desempilhar() {
         printf("Stack vazia.\n");
         Tabuleiro vazio = {{{0}}, 0, 0};
         return vazio;
+    }
+}
+
+void gravarJogo(char *nome, Tabuleiro *t) {
+    guardar_estado(t);  // salva o estado atual antes de gravar
+
+    FILE *f = fopen(nome, "w");
+    if (!f) {
+        printf("Erro ao abrir ficheiro para escrita: %s\n", nome);
+        return;
+    }
+
+    // escreve dimensões
+    fprintf(f, "%d %d\n", t->linhas, t->colunas);
+
+    // escreve o tabuleiro
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            fputc(t->tabuleiro[i][j], f);
+        }
+        fputc('\n', f);
+    }
+
+    fclose(f);
+    printf("Jogo gravado com sucesso em '%s'.\n", nome);
+}
+
+void lerJogo(char *nome, Tabuleiro *t) {
+    guardar_estado(t);  // para permitir desfazer o 'l'
+
+    FILE *f = fopen(nome, "r");
+    if (!f) {
+        printf("Erro ao abrir ficheiro: %s\n", nome);
+        return;
+    }
+
+    fscanf(f, "%d %d", &t->colunas, &t->linhas);
+    fgetc(f); // consome newline
+
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            t->tabuleiro[i][j] = fgetc(f);
+        }
+        fgetc(f); // consome newline
+    }
+
+    fclose(f);
+}
+
+void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas) {
+    for (int i = 0; i < linhas; i++) {
+        for (int j = 0; j < colunas; j++) {
+            if (tabuleiro[i][j] == '#') {
+                int brancas = 0;
+
+                // Cima
+                if (i > 0 && isupper(tabuleiro[i-1][j])) brancas++;
+                // Baixo
+                if (i < linhas-1 && isupper(tabuleiro[i+1][j])) brancas++;
+                // Esquerda
+                if (j > 0 && isupper(tabuleiro[i][j-1])) brancas++;
+                // Direita
+                if (j < colunas-1 && isupper(tabuleiro[i][j+1])) brancas++;
+
+                if (brancas < 4) {
+                    printf("Restrição violada: Casa #%d,%d não está rodeada por 4 casas brancas.\n", i, j);
+                }
+            }
+        }
+    }
+}
+
+void verificar_brancas(char tabuleiro[1000][1000], int linhas, int colunas) {
+    for (int i = 0; i < linhas; i++) {
+        int letras[26] = {0};
+        for (int j = 0; j < colunas; j++) {
+            if (isupper(tabuleiro[i][j])) {
+                int idx = tabuleiro[i][j] - 'A';
+                letras[idx]++;
+                if (letras[idx] > 1) {
+                    printf("Restrição violada: Letra %c repetida na linha %d.\n", tabuleiro[i][j], i);
+                }
+            }
+        }
+    }
+
+    for (int j = 0; j < colunas; j++) {
+        int letras[26] = {0};
+        for (int i = 0; i < linhas; i++) {
+            if (isupper(tabuleiro[i][j])) {
+                int idx = tabuleiro[i][j] - 'A';
+                letras[idx]++;
+                if (letras[idx] > 1) {
+                    printf("Restrição violada: Letra %c repetida na coluna %d.\n", tabuleiro[i][j], j);
+                }
+            }
+        }
     }
 }
