@@ -4,6 +4,11 @@
 #include <string.h>
 #include <stdlib.h>
 
+// Global Variables
+Tabuleiro stack[STACK_SIZE];
+int topoStack = -1;
+
+// Function Definitions
 void lerEstadoJogo(char *nomearquivo, char tabuleiro[1000][1000], int *linhas, int *colunas) {
     FILE *f = fopen(nomearquivo, "r");
     if (f == NULL) {
@@ -26,6 +31,7 @@ void lerEstadoJogo(char *nomearquivo, char tabuleiro[1000][1000], int *linhas, i
             }
         }
     }
+
     fclose(f);
 }
 
@@ -48,7 +54,7 @@ void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, 
 
 void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        if (tabuleiro[y][x] != '\0') {
+        if (tabuleiro[y][x] != '\0') {  // Check if the cell is initialized
             tabuleiro[y][x] = '#';
         } else {
             printf("Célula vazia, não pode ser riscada.\n");
@@ -77,40 +83,25 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
         return 0;
     }
     *x = input[0] - 'a';
-    *y = atoi(&input[1]) - 1;  // porque começa em 0
+    *y = input[1] - '1';
     return 1;
 }
 
-#define STACK_SIZE 100
-
-typedef struct {
-    char tabuleiro[1000][1000];
-    int linhas;
-    int colunas;
-} Tabuleiro;
-
-// Stack para armazenar o tabuleiro 
-Tabuleiro stack[STACK_SIZE];
-int topoStack = -1;
-
-// Função para empilhar um estado do tabuleiro para o topo da stack
-void stacks(Tabuleiro state) {
+void stacks(Tabuleiro estado) {
     if (topoStack < STACK_SIZE - 1) {
-        stack[++topoStack] = state;
+        topoStack++;
+        stack[topoStack] = estado;
     } else {
-        printf("Erro: Pilha cheia, não é possível salvar o estado.\n");
+        printf("Stack cheia. Não é possível guardar mais estados.\n");
     }
 }
 
-// Função para desempilhar um estado do topo da pilha
 Tabuleiro desempilhar() {
     if (topoStack >= 0) {
-        return stack[topoStack--]; // Retorna o tabuleiro do topo e reduz o topo o indice do topo da stack
+        return stack[topoStack--];
     } else {
-        printf("Erro: Pilha vazia, não há estado anterior.\n");
-        
-        // Devolve um tabuleiro vazio para o caso da stack estar vazia
-        Tabuleiro tabuleiroVazio = {{{0}}, 0, 0}; 
-        return tabuleiroVazio;
+        printf("Stack vazia.\n");
+        Tabuleiro vazio = {{{0}}, 0, 0};
+        return vazio;
     }
 }
