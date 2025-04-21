@@ -4,9 +4,21 @@
 #include <string.h>
 #include <stdlib.h>
 
+// Declarações globais
 Tabuleiro stack[tamanhoStack];
 int topoStack = -1;
 
+// Funções auxiliares
+int formatoParaCoordenadas(char *input, int *x, int *y) {
+    if (strlen(input) < 2 || !isalpha(input[0]) || !isdigit(input[1])) {
+        return 0;
+    }
+    *x = input[0] - 'a';
+    *y = input[1] - '1';
+    return 1;
+}
+
+// Funções relacionadas ao tabuleiro
 void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -26,7 +38,7 @@ void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, 
 
 void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        if (tabuleiro[y][x] != '\0') {  // Verifica se a célula está inicializada
+        if (tabuleiro[y][x] != '\0') {
             tabuleiro[y][x] = '#';
         } else {
             printf("Célula vazia, não pode ser riscada.\n");
@@ -36,29 +48,7 @@ void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
     }
 }
 
-void imprimir_comandos() {
-    printf("Comandos disponíveis:\n");
-    printf("g - Gravar o jogo atual no ficheiro\n");
-    printf("l - Ler o estado do jogo num ficheiro\n");
-    printf("b letra nr - Pintar de branco\n");
-    printf("r letra nr - Riscar\n");
-    printf("v - Verificar restrições\n");
-    printf("a - Aplicar inferências\n");
-    printf("A - Repetir inferências até não haver mudanças\n");
-    printf("R - Resolver o jogo\n");
-    printf("d - Desfazer última ação\n");
-    printf("s - Sair\n");
-}
-
-int formatoParaCoordenadas(char *input, int *x, int *y) {
-    if (strlen(input) < 2 || !isalpha(input[0]) || !isdigit(input[1])) {
-        return 0;
-    }
-    *x = input[0] - 'a';
-    *y = input[1] - '1';
-    return 1;
-}
-
+// Funções de gerenciamento de estado
 void stacks(Tabuleiro estado) {
     if (topoStack < tamanhoStack - 1) {
         topoStack++;
@@ -78,6 +68,20 @@ Tabuleiro desempilhar() {
     }
 }
 
+void guardar_estado(Tabuleiro *t) {
+    stacks(*t);
+}
+
+void desfazer(Tabuleiro *t) {
+    Tabuleiro tabuleiroAnterior = desempilhar();
+    if (tabuleiroAnterior.linhas > 0 && tabuleiroAnterior.colunas > 0) {
+        *t = tabuleiroAnterior;
+    } else {
+        printf("Não é possível desfazer mais ações.\n");
+    }
+}
+
+// Funções de gravação e leitura
 void gravarStack(char *nome) {
     FILE *f = fopen(nome, "w");
     if (!f) {
@@ -85,7 +89,7 @@ void gravarStack(char *nome) {
         return;
     }
 
-    fprintf(f, "%d\n", topoStack);  // primeiro guarda o topo da stack
+    fprintf(f, "%d\n", topoStack);
 
     for (int i = 0; i <= topoStack; i++) {
         fprintf(f, "%d %d\n", stack[i].linhas, stack[i].colunas);
@@ -117,21 +121,7 @@ void gravarJogo(char *nome, Tabuleiro *t) {
     }
 
     fclose(arquivo);
-
-    // Grava a stack juntamente com o tabuleiro atual 
     gravarStack("stack.txt");
-}
-void guardar_estado(Tabuleiro *t) {
-    stacks(*t);
-}
-
-void desfazer(Tabuleiro *t) {
-    Tabuleiro tabuleiroAnterior = desempilhar();
-    if (tabuleiroAnterior.linhas > 0 && tabuleiroAnterior.colunas > 0) {
-        *t = tabuleiroAnterior;
-    } else {
-        printf("Não é possível desfazer mais ações.\n");
-    }
 }
 
 void lerStack(char *nome) {
@@ -142,7 +132,6 @@ void lerStack(char *nome) {
     }
 
     if (fscanf(f, "%d\n", &topoStack) != 1) {
-        // Pode ser um novo jogo, não mostrar erro
         fclose(f);
         topoStack = -1;
         return;
@@ -150,7 +139,6 @@ void lerStack(char *nome) {
 
     for (int i = 0; i <= topoStack; i++) {
         if (fscanf(f, "%d %d\n", &stack[i].linhas, &stack[i].colunas) != 2) {
-            // Leitura incompleta ou corrompida, ajusta topo
             topoStack = i - 1;
             break;
         }
@@ -159,7 +147,7 @@ void lerStack(char *nome) {
             for (int x = 0; x < stack[i].colunas; x++) {
                 stack[i].tabuleiro[y][x] = fgetc(f);
             }
-            fgetc(f); // consumir '\n'
+            fgetc(f);
         }
     }
 
@@ -184,11 +172,10 @@ void lerJogo(char *nome, Tabuleiro *t) {
     }
 
     fclose(f);
-
-    // Queremos carregar a stack também para podermos desfazer ações mesmo depois de carregar o jogo e não ter uma stack vazia
     lerStack("stack.txt");
 }
 
+// Funções de verificação e regras
 void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -241,4 +228,19 @@ void verificar_estado(char tabuleiro[1000][1000], int linhas, int colunas) {
     verificar_riscadas(tabuleiro, linhas, colunas);
     verificar_brancas(tabuleiro, linhas, colunas);
     printf("Verificação concluída.\n");
+}
+
+// Funções de interface
+void imprimir_comandos() {
+    printf("Comandos disponíveis:\n");
+    printf("g - Gravar o jogo atual no ficheiro\n");
+    printf("l - Ler o estado do jogo num ficheiro\n");
+    printf("b letra nr - Pintar de branco\n");
+    printf("r letra nr - Riscar\n");
+    printf("v - Verificar restrições\n");
+    printf("a - Aplicar inferências\n");
+    printf("A - Repetir inferências até não haver mudanças\n");
+    printf("R - Resolver o jogo\n");
+    printf("d - Desfazer última ação\n");
+    printf("s - Sair\n");
 }
