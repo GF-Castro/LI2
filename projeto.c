@@ -4,10 +4,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-// Variaveis globais
-Tabuleiro stack[STACK_SIZE];
-int topoStack = -1;
-
 void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -27,7 +23,7 @@ void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, 
 
 void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        if (tabuleiro[y][x] != '\0') {  // Check if the cell is initialized
+        if (tabuleiro[y][x] != '\0') {  // Verifica se a célula está inicializada
             tabuleiro[y][x] = '#';
         } else {
             printf("Célula vazia, não pode ser riscada.\n");
@@ -61,7 +57,7 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
 }
 
 void stacks(Tabuleiro estado) {
-    if (topoStack < STACK_SIZE - 1) {
+    if (topoStack < tamanhoStack - 1) {
         topoStack++;
         stack[topoStack] = estado;
     } else {
