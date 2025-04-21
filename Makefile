@@ -28,9 +28,15 @@ test: teste
 	@echo "A correr os testes..."
 	@./teste
 
-# Apaga executáveis
+# Código com gcov
+gcov:
+	$(CC) -Wall -Wextra -pedantic -O0 -fprofile-arcs -ftest-coverage -g -o teste_cov $(TEST) -lcunit
+	./teste_cov
+	gcov projeto.c
+
+# Apaga executáveis e ficheiros temporários
 clean:
-	rm -f main teste *.o
+	rm -f main teste teste_cov *.o *.gcda *.gcno *.gcov
 
 # Comando Gerais
 rebuild:
