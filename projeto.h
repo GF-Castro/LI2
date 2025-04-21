@@ -10,7 +10,7 @@ typedef struct {
     int colunas;
 } Tabuleiro;
 
-// Declaração de variáveis globais
+// Declaração de variáveis globais, usei extern para evitar duplicação, basicamente só diz que a variável existe em noutro arquivo (projeto.c)
 extern Tabuleiro stack[tamanhoStack];
 extern int topoStack;
 
