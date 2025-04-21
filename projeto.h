@@ -1,15 +1,7 @@
 #ifndef PROJETO_H
 #define PROJETO_H
 
-// Declaração de funções
-void lerEstadoJogo(char *nomearquivo, char tabuleiro[1000][1000], int *linhas, int *colunas);
-void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas);
-void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
-void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
-void imprimir_comandos();
-int formatoParaCoordenadas(char *input, int *x, int *y);
-
-// Declaração de variáveis globais
+// Definição de constantes e structs
 #define tamanhoStack 100
 
 typedef struct {
@@ -18,11 +10,26 @@ typedef struct {
     int colunas;
 } Tabuleiro;
 
-Tabuleiro stack[tamanhoStack];
-int topoStack = -1;
+// Declaração de variáveis globais
+extern Tabuleiro stack[tamanhoStack];
+extern int topoStack;
 
-void stacks(Tabuleiro estado);
+// Declaração de funções
+void imprimir_comandos();
+void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas);
+void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
+void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
+void verificar_estado(char tabuleiro[1000][1000], int linhas, int colunas);
+void lerJogo(char *nome, Tabuleiro *t);
+void gravarJogo(char *nome, Tabuleiro *t);
+void guardar_estado(Tabuleiro *t);
+void desfazer(Tabuleiro *t);
+int formatoParaCoordenadas(char *input, int *x, int *y);
 Tabuleiro desempilhar();
-
+void stacks(Tabuleiro estado);
+void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas);
+void verificar_brancas(char tabuleiro[1000][1000], int linhas, int colunas);
+void gravarStack(char *nome);
+void lerStack(char *nome);
 
 #endif

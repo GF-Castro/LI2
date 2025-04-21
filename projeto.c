@@ -4,6 +4,9 @@
 #include <string.h>
 #include <stdlib.h>
 
+Tabuleiro stack[tamanhoStack];
+int topoStack = -1;
+
 void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -75,33 +78,95 @@ Tabuleiro desempilhar() {
     }
 }
 
-void gravarJogo(char *nome, Tabuleiro *t) {
-    guardar_estado(t);  // salva o estado atual antes de gravar
-
+void gravarStack(char *nome) {
     FILE *f = fopen(nome, "w");
     if (!f) {
-        printf("Erro ao abrir ficheiro para escrita: %s\n", nome);
+        perror("Erro ao guardar a stack");
         return;
     }
 
-    // escreve dimensões
-    fprintf(f, "%d %d\n", t->linhas, t->colunas);
+    fprintf(f, "%d\n", topoStack);  // primeiro guarda o topo da stack
 
-    // escreve o tabuleiro
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
-            fputc(t->tabuleiro[i][j], f);
+    for (int i = 0; i <= topoStack; i++) {
+        fprintf(f, "%d %d\n", stack[i].linhas, stack[i].colunas);
+        for (int y = 0; y < stack[i].linhas; y++) {
+            for (int x = 0; x < stack[i].colunas; x++) {
+                fputc(stack[i].tabuleiro[y][x], f);
+            }
+            fputc('\n', f);
         }
-        fputc('\n', f);
     }
 
     fclose(f);
-    printf("Jogo gravado com sucesso em '%s'.\n", nome);
+}
+
+void gravarJogo(char *nome, Tabuleiro *t) {
+    FILE *arquivo = fopen(nome, "w");
+    if (arquivo == NULL) {
+        perror("Erro ao abrir tabuleiro.txt");
+        return;
+    }
+
+    fprintf(arquivo, "%d %d\n", t->colunas, t->linhas);
+
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            fputc(t->tabuleiro[i][j], arquivo);
+        }
+        fputc('\n', arquivo);
+    }
+
+    fclose(arquivo);
+
+    // Grava a stack juntamente com o tabuleiro atual 
+    gravarStack("stack.txt");
+}
+void guardar_estado(Tabuleiro *t) {
+    stacks(*t);
+}
+
+void desfazer(Tabuleiro *t) {
+    Tabuleiro tabuleiroAnterior = desempilhar();
+    if (tabuleiroAnterior.linhas > 0 && tabuleiroAnterior.colunas > 0) {
+        *t = tabuleiroAnterior;
+    } else {
+        printf("Não é possível desfazer mais ações.\n");
+    }
+}
+
+void lerStack(char *nome) {
+    FILE *f = fopen(nome, "r");
+    if (!f) {
+        topoStack = -1;
+        return;
+    }
+
+    if (fscanf(f, "%d\n", &topoStack) != 1) {
+        // Pode ser um novo jogo, não mostrar erro
+        fclose(f);
+        topoStack = -1;
+        return;
+    }
+
+    for (int i = 0; i <= topoStack; i++) {
+        if (fscanf(f, "%d %d\n", &stack[i].linhas, &stack[i].colunas) != 2) {
+            // Leitura incompleta ou corrompida, ajusta topo
+            topoStack = i - 1;
+            break;
+        }
+
+        for (int y = 0; y < stack[i].linhas; y++) {
+            for (int x = 0; x < stack[i].colunas; x++) {
+                stack[i].tabuleiro[y][x] = fgetc(f);
+            }
+            fgetc(f); // consumir '\n'
+        }
+    }
+
+    fclose(f);
 }
 
 void lerJogo(char *nome, Tabuleiro *t) {
-    guardar_estado(t);  // para permitir desfazer o 'l'
-
     FILE *f = fopen(nome, "r");
     if (!f) {
         printf("Erro ao abrir ficheiro: %s\n", nome);
@@ -109,16 +174,19 @@ void lerJogo(char *nome, Tabuleiro *t) {
     }
 
     fscanf(f, "%d %d", &t->colunas, &t->linhas);
-    fgetc(f); // consome newline
+    fgetc(f);
 
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
             t->tabuleiro[i][j] = fgetc(f);
         }
-        fgetc(f); // consome newline
+        fgetc(f);
     }
 
     fclose(f);
+
+    // Queremos carregar a stack também para podermos desfazer ações mesmo depois de carregar o jogo e não ter uma stack vazia
+    lerStack("stack.txt");
 }
 
 void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas) {
@@ -127,13 +195,9 @@ void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas) {
             if (tabuleiro[i][j] == '#') {
                 int brancas = 0;
 
-                // Cima
                 if (i > 0 && isupper(tabuleiro[i-1][j])) brancas++;
-                // Baixo
                 if (i < linhas-1 && isupper(tabuleiro[i+1][j])) brancas++;
-                // Esquerda
                 if (j > 0 && isupper(tabuleiro[i][j-1])) brancas++;
-                // Direita
                 if (j < colunas-1 && isupper(tabuleiro[i][j+1])) brancas++;
 
                 if (brancas < 4) {
@@ -170,4 +234,11 @@ void verificar_brancas(char tabuleiro[1000][1000], int linhas, int colunas) {
             }
         }
     }
+}
+
+void verificar_estado(char tabuleiro[1000][1000], int linhas, int colunas) {
+    printf("Verificando restrições...\n");
+    verificar_riscadas(tabuleiro, linhas, colunas);
+    verificar_brancas(tabuleiro, linhas, colunas);
+    printf("Verificação concluída.\n");
 }

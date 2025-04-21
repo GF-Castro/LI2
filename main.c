@@ -19,9 +19,12 @@ int main() {
         }
 
         if (strcmp(comando, "l") == 0) {
-            lerJogo("tabuleiro.txt", &t);  // lê e guarda estado anterior
+            lerJogo("tabuleiro.txt", &t);  // lê tabuleiro e stack
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         } 
+        else if (strcmp(comando, "g") == 0) {
+            gravarJogo("tabuleiro.txt", &t);  // grava tabuleiro e stack
+        }
         else if (strcmp(comando, "s") == 0) {
             printf("Jogo encerrado.\n");
             break;
@@ -37,7 +40,6 @@ int main() {
                 continue;
             }
 
-            // Guarda o estado atual na stack antes de modificar
             guardar_estado(&t);
 
             if (strcmp(comando, "b") == 0)
@@ -48,14 +50,7 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         } 
         else if (strcmp(comando, "d") == 0) {
-            if (topoStack == -1) {
-                printf("Nenhum estado para desfazer.\n");
-                continue;
-            }
-
-            Tabuleiro anterior = desempilhar();
-            t = anterior;
-
+            desfazer(&t);
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         } 
         else if (strcmp(comando, "v") == 0) {
