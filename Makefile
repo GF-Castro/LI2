@@ -34,6 +34,7 @@ gcov:
 	./teste_cov
 	gcov -b -c projeto.c
 
+
 # Apaga executáveis e ficheiros temporários
 clean:
 	rm -f main teste teste_cov *.o *.gcda *.gcno *.gcov
