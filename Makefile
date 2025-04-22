@@ -32,7 +32,7 @@ test: teste
 gcov:
 	$(CC) -Wall -Wextra -pedantic -O0 -fprofile-arcs -ftest-coverage -g -o teste_cov $(TEST) -lcunit
 	./teste_cov
-	gcov projeto.c
+	gcov -b -c projeto.c
 
 # Apaga executáveis e ficheiros temporários
 clean:

@@ -4,62 +4,31 @@
 #include <stdio.h>
 #include <string.h>
 
-// Teste para a função lerEstadoJogo
-void teste_lerEstadoJogo() {
-    char tabuleiro[1000][1000];
-    int linhas, colunas;
-
+// Teste para a função lerJogo
+void teste_lerJogo() {
+    Tabuleiro t = {0};
+    
     // Caso de teste: ficheiro com dimensões e tabuleiro válidos
     FILE *f = fopen("test_tabuleiro.txt", "w");
-    fprintf(f, "3 3\nA B C\nD E F\nG H I\n");
+    fprintf(f, "3 3\nABC\nDEF\nGHI\n");
     fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
-    CU_ASSERT_EQUAL(linhas, 3);
-    CU_ASSERT_EQUAL(colunas, 3);
-    CU_ASSERT_EQUAL(tabuleiro[0][0], 'A');
-    CU_ASSERT_EQUAL(tabuleiro[1][1], 'E');
-    CU_ASSERT_EQUAL(tabuleiro[2][2], 'I');
+    
+    lerJogo("test_tabuleiro.txt", &t);
+    CU_ASSERT_EQUAL(t.linhas, 3);
+    CU_ASSERT_EQUAL(t.colunas, 3);
+    CU_ASSERT_EQUAL(t.tabuleiro[0][0], 'A');
+    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'E');
+    CU_ASSERT_EQUAL(t.tabuleiro[2][2], 'I');
     remove("test_tabuleiro.txt");
 
     // Caso de teste: ficheiro vazio
     f = fopen("test_tabuleiro.txt", "w");
     fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
-    remove("test_tabuleiro.txt");
-
-    // Caso de teste: dimensões mal formatadas
-    f = fopen("test_tabuleiro.txt", "w");
-    fprintf(f, "X Y\nA B C\nD E F\nG H I\n");
-    fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
-    remove("test_tabuleiro.txt");
-
-    // Caso de teste: dimensões muito grandes
-    f = fopen("test_tabuleiro.txt", "w");
-    fprintf(f, "1001 1001\n");
-    fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
-    remove("test_tabuleiro.txt");
-
-    // Caso de teste: tabuleiro com caracteres não alfanuméricos
-    f = fopen("test_tabuleiro.txt", "w");
-    fprintf(f, "3 3\n@ # $\n%% ^ &\n* ( )\n");
-    fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
-    CU_ASSERT_EQUAL(tabuleiro[0][0], '@');
-    CU_ASSERT_EQUAL(tabuleiro[1][1], '^');
-    CU_ASSERT_EQUAL(tabuleiro[2][2], ')');
-    remove("test_tabuleiro.txt");
-
-    // Caso de teste: tabuleiro com linhas incompletas
-    f = fopen("test_tabuleiro.txt", "w");
-    fprintf(f, "3 3\nA B\nC D E\nF G H\n");
-    fclose(f);
-    lerEstadoJogo("test_tabuleiro.txt", tabuleiro, &linhas, &colunas);
+    lerJogo("test_tabuleiro.txt", &t);
     remove("test_tabuleiro.txt");
 
     // Caso de teste: ficheiro inexistente
-    lerEstadoJogo("nao_existe.txt", tabuleiro, &linhas, &colunas);
+    lerJogo("nao_existe.txt", &t);
 }
 
 // Teste para a função pintarDeBranco
@@ -141,6 +110,31 @@ void teste_formatoParaCoordenadas() {
     CU_ASSERT_FALSE(formatoParaCoordenadas("!@#", &x, &y));
 }
 
+// Teste para a função formatoParaCoordenadas com casos adicionais
+void teste_formatoParaCoordenadas_extendido() {
+    int x, y;
+    
+    // Teste limites do tabuleiro
+    CU_ASSERT_TRUE(formatoParaCoordenadas("a1", &x, &y));
+    CU_ASSERT_EQUAL(x, 0);
+    CU_ASSERT_EQUAL(y, 0);
+    
+    // Teste com letra maiúscula
+    CU_ASSERT_TRUE(formatoParaCoordenadas("B3", &x, &y));
+    CU_ASSERT_EQUAL(x, 1);
+    CU_ASSERT_EQUAL(y, 2);
+    
+    // Teste com números maiores
+    CU_ASSERT_TRUE(formatoParaCoordenadas("z99", &x, &y));
+    CU_ASSERT_EQUAL(x, 25);
+    CU_ASSERT_EQUAL(y, 98);
+    
+    // Teste com strings mal formatadas
+    CU_ASSERT_FALSE(formatoParaCoordenadas("a", &x, &y));
+    CU_ASSERT_FALSE(formatoParaCoordenadas("1a", &x, &y));
+    CU_ASSERT_FALSE(formatoParaCoordenadas("a1b", &x, &y));
+}
+
 // Teste para a função imprimirTabuleiro
 void teste_imprimirTabuleiro() {
     char tabuleiro[1000][1000] = {
@@ -164,6 +158,93 @@ void teste_imprimir_comandos() {
     imprimir_comandos();
 }
 
+// Teste para as funções de gerenciamento de estado (stack)
+void teste_gerenciamento_estado() {
+    Tabuleiro t1 = {{{'a','b'}, {'c','d'}}, 2, 2};
+    Tabuleiro t2 = {{{'e','f'}, {'g','h'}}, 2, 2};
+    
+    // Teste empilhar e desempilhar
+    stacks(t1);
+    CU_ASSERT_EQUAL(topoStack, 0);
+    stacks(t2);
+    CU_ASSERT_EQUAL(topoStack, 1);
+    
+    Tabuleiro t_recuperado = desempilhar();
+    CU_ASSERT_EQUAL(t_recuperado.linhas, 2);
+    CU_ASSERT_EQUAL(t_recuperado.tabuleiro[0][0], 'e');
+    CU_ASSERT_EQUAL(topoStack, 0);
+    
+    t_recuperado = desempilhar();
+    CU_ASSERT_EQUAL(t_recuperado.linhas, 2);
+    CU_ASSERT_EQUAL(t_recuperado.tabuleiro[0][0], 'a');
+    CU_ASSERT_EQUAL(topoStack, -1);
+    
+    // Teste desempilhar com stack vazia
+    t_recuperado = desempilhar();
+    CU_ASSERT_EQUAL(t_recuperado.linhas, 0);
+    
+    // Teste guardar_estado e desfazer
+    Tabuleiro t_atual = {{{'x','y'}, {'z','w'}}, 2, 2};
+    guardar_estado(&t_atual);
+    CU_ASSERT_EQUAL(topoStack, 0);
+    
+    t_atual.tabuleiro[0][0] = 'm';
+    desfazer(&t_atual);
+    CU_ASSERT_EQUAL(t_atual.tabuleiro[0][0], 'x');
+    CU_ASSERT_EQUAL(topoStack, -1);
+}
+
+// Teste para as funções de verificação de regras
+void teste_verificacao_regras() {
+    char tabuleiro_valido[1000][1000] = {{0}};
+    char tabuleiro_invalido[1000][1000] = {{0}};
+    
+    // Preencher com dados de teste
+    tabuleiro_valido[0][0] = 'A'; tabuleiro_valido[0][1] = '#'; tabuleiro_valido[0][2] = 'B';
+    tabuleiro_valido[1][0] = '#'; tabuleiro_valido[1][1] = 'C'; tabuleiro_valido[1][2] = '#';
+    tabuleiro_valido[2][0] = 'D'; tabuleiro_valido[2][1] = '#'; tabuleiro_valido[2][2] = 'E';
+    
+    tabuleiro_invalido[0][0] = 'A'; tabuleiro_invalido[0][1] = '#'; tabuleiro_invalido[0][2] = 'A';
+    tabuleiro_invalido[1][0] = '#'; tabuleiro_invalido[1][1] = 'B'; tabuleiro_invalido[1][2] = '#';
+    tabuleiro_invalido[2][0] = 'C'; tabuleiro_invalido[2][1] = '#'; tabuleiro_invalido[2][2] = 'B';
+    
+    // Testes
+    verificar_riscadas(tabuleiro_valido, 3, 3);
+    verificar_brancas(tabuleiro_valido, 3, 3);
+    verificar_riscadas(tabuleiro_invalido, 3, 3);
+    verificar_brancas(tabuleiro_invalido, 3, 3);
+    verificar_estado(tabuleiro_valido, 3, 3);
+    verificar_estado(tabuleiro_invalido, 3, 3);
+}
+
+// Teste para as funções de gravação e leitura de arquivo
+void teste_arquivos() {
+    Tabuleiro t_original = {{{'a','b'}, {'c','d'}}, 2, 2};
+    Tabuleiro t_lido = {0};
+    
+    // Teste gravar e ler jogo
+    gravarJogo("teste_jogo.txt", &t_original);
+    lerJogo("teste_jogo.txt", &t_lido);
+    CU_ASSERT_EQUAL(t_lido.linhas, 2);
+    CU_ASSERT_EQUAL(t_lido.colunas, 2);
+    CU_ASSERT_EQUAL(t_lido.tabuleiro[0][0], 'a');
+    remove("teste_jogo.txt");
+    remove("stack.txt");
+    
+    // Teste gravar e ler stack
+    stacks(t_original);
+    gravarStack("teste_stack.txt");
+    topoStack = -1; // Reset para simular novo programa
+    lerStack("teste_stack.txt");
+    CU_ASSERT_EQUAL(topoStack, 0);
+    CU_ASSERT_EQUAL(stack[0].linhas, 2);
+    remove("teste_stack.txt");
+    
+    // Teste com arquivos inexistentes
+    lerJogo("nao_existe.txt", &t_lido);
+    lerStack("nao_existe.txt");
+}
+
 int main() {
     // Inicializar o registo de testes do CUnit
     if (CUE_SUCCESS != CU_initialize_registry()) {
@@ -178,12 +259,16 @@ int main() {
     }
 
     // Adicionar testes ao conjunto
-    if ((NULL == CU_add_test(suite, "teste_lerEstadoJogo", teste_lerEstadoJogo)) ||
+    if ((NULL == CU_add_test(suite, "teste_lerJogo", teste_lerJogo)) ||
         (NULL == CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco)) ||
         (NULL == CU_add_test(suite, "teste_riscar", teste_riscar)) ||
         (NULL == CU_add_test(suite, "teste_formatoParaCoordenadas", teste_formatoParaCoordenadas)) ||
+        (NULL == CU_add_test(suite, "teste_formatoParaCoordenadas_extendido", teste_formatoParaCoordenadas_extendido)) ||
         (NULL == CU_add_test(suite, "teste_imprimirTabuleiro", teste_imprimirTabuleiro)) ||
-        (NULL == CU_add_test(suite, "teste_imprimir_comandos", teste_imprimir_comandos))) {
+        (NULL == CU_add_test(suite, "teste_imprimir_comandos", teste_imprimir_comandos)) ||
+        (NULL == CU_add_test(suite, "teste_gerenciamento_estado", teste_gerenciamento_estado)) ||
+        (NULL == CU_add_test(suite, "teste_verificacao_regras", teste_verificacao_regras)) ||
+        (NULL == CU_add_test(suite, "teste_arquivos", teste_arquivos))) {
         CU_cleanup_registry();
         return CU_get_error();
     }
