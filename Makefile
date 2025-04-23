@@ -8,7 +8,7 @@ TEST = testes.c projeto.c
 HDRS = projeto.h
 
 # Def 'all'
-all: main teste
+all: main teste gcov
 
 # Comandos main
 main:
@@ -30,7 +30,7 @@ test: teste
 
 # Código com gcov
 gcov:
-	$(CC) -Wall -Wextra -pedantic -O0 -fprofile-arcs -ftest-coverage -g -o teste_cov $(TEST) -lcunit
+	$(CC) -Wall -Wextra -pedantic -O1 -fprofile-arcs -ftest-coverage -g -o teste_cov $(TEST) -lcunit
 	./teste_cov
 	gcov -b -c teste_cov-projeto.c
 
