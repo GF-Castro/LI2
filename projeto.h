@@ -5,7 +5,7 @@
 #define tamanhoStack 100
 
 typedef struct {
-    char tabuleiro[1000][1000];
+    char tabuleiro[26][1000];
     int linhas;
     int colunas;
 } Tabuleiro;
@@ -16,10 +16,10 @@ extern int topoStack;
 
 // Declaração de funções
 void imprimir_comandos();
-void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas);
-void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
-void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y);
-void verificar_estado(char tabuleiro[1000][1000], int linhas, int colunas);
+void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas);
+void pintarDeBranco(char tabuleiro[26][1000], int linhas, int colunas, int x, int y);
+void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y);
+void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas);
 void lerJogo(char *nome, Tabuleiro *t);
 void gravarJogo(char *nome, Tabuleiro *t);
 void guardar_estado(Tabuleiro *t);
@@ -27,8 +27,8 @@ void desfazer(Tabuleiro *t);
 int formatoParaCoordenadas(char *input, int *x, int *y);
 Tabuleiro desempilhar();
 void stacks(Tabuleiro estado);
-void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas);
-void verificar_brancas(char tabuleiro[1000][1000], int linhas, int colunas);
+void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas);
+void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas);
 void gravarStack(char *nome);
 void lerStack(char *nome);
 

@@ -38,7 +38,7 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
 }
 
 // Funções relacionadas ao tabuleiro
-void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
+void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
             printf("%c ", tabuleiro[i][j]);
@@ -47,7 +47,7 @@ void imprimirTabuleiro(char tabuleiro[1000][1000], int linhas, int colunas) {
     }
 }
 
-void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
+void pintarDeBranco(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
         tabuleiro[y][x] = toupper(tabuleiro[y][x]);
     } else {
@@ -55,7 +55,7 @@ void pintarDeBranco(char tabuleiro[1000][1000], int linhas, int colunas, int x, 
     }
 }
 
-void riscar(char tabuleiro[1000][1000], int linhas, int colunas, int x, int y) {
+void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
         if (tabuleiro[y][x] != '\0') {
             tabuleiro[y][x] = '#';
@@ -198,54 +198,91 @@ void lerJogo(char *nome, Tabuleiro *t) {
 }
 
 // Funções de verificação e regras
-void verificar_riscadas(char tabuleiro[1000][1000], int linhas, int colunas) {
+void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
             if (tabuleiro[i][j] == '#') {
                 int brancas = 0;
+                int vizinhas = 0;
 
-                if (i > 0 && isupper(tabuleiro[i-1][j])) brancas++;
-                if (i < linhas-1 && isupper(tabuleiro[i+1][j])) brancas++;
-                if (j > 0 && isupper(tabuleiro[i][j-1])) brancas++;
-                if (j < colunas-1 && isupper(tabuleiro[i][j+1])) brancas++;
+                // Cima
+                if (i > 0) {
+                    vizinhas++;
+                    if (isupper(tabuleiro[i-1][j])) brancas++;
+                }
+                // Baixo
+                if (i < linhas-1) {
+                    vizinhas++;
+                    if (isupper(tabuleiro[i+1][j])) brancas++;
+                }
+                // Esquerda
+                if (j > 0) {
+                    vizinhas++;
+                    if (isupper(tabuleiro[i][j-1])) brancas++;
+                }
+                // Direita
+                if (j < colunas-1) {
+                    vizinhas++;
+                    if (isupper(tabuleiro[i][j+1])) brancas++;
+                }
 
-                if (brancas < 4) {
-                    printf("Restrição violada: Casa #%d,%d não está rodeada por 4 casas brancas.\n", i, j);
+                // Agora comparamos brancas com o número de vizinhas existentes
+                if (brancas < vizinhas) {
+                    char coluna = 'a' + j;      // j = 0 → 'a', j = 1 → 'b', etc.
+                    int  linha  = i + 1;        // i = 0 → 1, i = 1 → 2, etc.
+                    
+                    printf("Restrição violada: Casa %c%d não está rodeada por %d vizinhas brancas.\n",
+                           coluna, linha, vizinhas);
+                    
                 }
             }
         }
     }
 }
 
-void verificar_brancas(char tabuleiro[1000][1000], int linhas, int colunas) {
+
+void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas) {
+    // Verifica repetições em cada linha
     for (int i = 0; i < linhas; i++) {
-        int letras[26] = {0};
+        int contador[26] = {0};
+
         for (int j = 0; j < colunas; j++) {
             if (isupper(tabuleiro[i][j])) {
-                int idx = tabuleiro[i][j] - 'A';
-                letras[idx]++;
-                if (letras[idx] > 1) {
-                    printf("Restrição violada: Letra %c repetida na linha %d.\n", tabuleiro[i][j], i);
-                }
+                contador[tabuleiro[i][j] - 'A']++;
+            }
+        }
+
+        for (int k = 0; k < 26; k++) {
+            if (contador[k] > 1) {
+                char letra = 'A' + k;
+                int linha_visual = i + 1;  
+                printf("Restrição violada: Letra %c foi repetida %d vezes na linha %d.\n",
+                       letra, contador[k], linha_visual);
             }
         }
     }
-
+    // Verifica repetições em cada coluna
     for (int j = 0; j < colunas; j++) {
-        int letras[26] = {0};
+        int contador[26] = {0};
         for (int i = 0; i < linhas; i++) {
             if (isupper(tabuleiro[i][j])) {
-                int idx = tabuleiro[i][j] - 'A';
-                letras[idx]++;
-                if (letras[idx] > 1) {
-                    printf("Restrição violada: Letra %c repetida na coluna %d.\n", tabuleiro[i][j], j);
-                }
+                contador[tabuleiro[i][j] - 'A']++;
+            }
+        }
+
+        for (int k = 0; k < 26; k++) {
+            if (contador[k] > 1) {
+                char letra = 'A' + k;
+                char coluna_letra = 'a' + j; 
+                printf("Restrição violada: Letra %c foi repetida %d vezes na coluna %c.\n",
+                       letra, contador[k], coluna_letra);
             }
         }
     }
 }
 
-void verificar_estado(char tabuleiro[1000][1000], int linhas, int colunas) {
+
+void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
     printf("Verificando restrições...\n");
     verificar_riscadas(tabuleiro, linhas, colunas);
     verificar_brancas(tabuleiro, linhas, colunas);

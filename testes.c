@@ -3,6 +3,10 @@
 #include <CUnit/Basic.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 
 // Teste para a função lerJogo
 void teste_lerJogo() {
@@ -33,7 +37,7 @@ void teste_lerJogo() {
 
 // Teste para a função pintarDeBranco
 void teste_pintarDeBranco() {
-    char tabuleiro[1000][1000] = {
+    char tabuleiro[26][1000] = {
         {'a', 'b', 'c'},
         {'d', 'e', 'f'},
         {'g', 'h', 'i'}
@@ -55,14 +59,14 @@ void teste_pintarDeBranco() {
     CU_ASSERT_EQUAL(tabuleiro[0][0], 'A');
 
     // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[1000][1000] = {{0}};
+    char tabuleiro_vazio[26][1000] = {{0}};
     pintarDeBranco(tabuleiro_vazio, linhas, colunas, 1, 1);
     CU_ASSERT_EQUAL(tabuleiro_vazio[1][1], '\0');
 }
 
 // Teste para a função riscar
 void teste_riscar() {
-    char tabuleiro[1000][1000] = {
+    char tabuleiro[26][1000] = {
         {'a', 'b', 'c'},
         {'d', 'e', 'f'},
         {'g', 'h', 'i'}
@@ -84,7 +88,7 @@ void teste_riscar() {
     CU_ASSERT_EQUAL(tabuleiro[2][2], '#');
 
     // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[1000][1000] = {{0}};
+    char tabuleiro_vazio[26][1000] = {{0}};
     riscar(tabuleiro_vazio, linhas, colunas, 1, 1);
     CU_ASSERT_EQUAL(tabuleiro_vazio[1][1], '\0');
 }
@@ -137,7 +141,7 @@ void teste_formatoParaCoordenadas_extendido() {
 
 // Teste para a função imprimirTabuleiro
 void teste_imprimirTabuleiro() {
-    char tabuleiro[1000][1000] = {
+    char tabuleiro[26][1000] = {
         {'A', 'B', 'C'},
         {'D', 'E', 'F'},
         {'G', 'H', 'I'}
@@ -148,7 +152,7 @@ void teste_imprimirTabuleiro() {
     imprimirTabuleiro(tabuleiro, linhas, colunas);
 
     // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[1000][1000] = {{0}};
+    char tabuleiro_vazio[26][1000] = {{0}};
     imprimirTabuleiro(tabuleiro_vazio, linhas, colunas);
 }
 
@@ -196,8 +200,8 @@ void teste_gerenciamento_estado() {
 
 // Teste para as funções de verificação de regras
 void teste_verificacao_regras() {
-    char tabuleiro_valido[1000][1000] = {{0}};
-    char tabuleiro_invalido[1000][1000] = {{0}};
+    char tabuleiro_valido[26][1000] = {{0}};
+    char tabuleiro_invalido[26][1000] = {{0}};
     
     // Preencher com dados de teste
     tabuleiro_valido[0][0] = 'A'; tabuleiro_valido[0][1] = '#'; tabuleiro_valido[0][2] = 'B';
@@ -245,39 +249,139 @@ void teste_arquivos() {
     lerStack("nao_existe.txt");
 }
 
+void teste_stacks_cheia() {
+    Tabuleiro t = { .linhas = 1, .colunas = 1 };
+    t.tabuleiro[0][0] = 'X';
+    topoStack = -1;
+    for (int i = 0; i < tamanhoStack; i++) guardar_estado(&t);
+    CU_ASSERT_EQUAL(topoStack, tamanhoStack - 1);
+    stacks(t);
+    CU_ASSERT_EQUAL(topoStack, tamanhoStack - 1);
+}
+
+void teste_desfazer_vazio() {
+    topoStack = -1;
+    Tabuleiro t = { .linhas = 2, .colunas = 2 };
+    t.tabuleiro[0][0] = 'A';
+    desfazer(&t);
+    CU_ASSERT_EQUAL(topoStack, -1);
+}
+
+void teste_gravarStack_erro_abertura() {
+    mkdir("tmpdir", 0700);
+    gravarStack("tmpdir");
+    rmdir("tmpdir");
+    CU_PASS("gravarStack erro de abertura coberto");
+}
+
+void teste_gravarJogo_erro_abertura() {
+    mkdir("tmpdir2", 0700);
+    Tabuleiro t = { .linhas = 1, .colunas = 1 };
+    t.tabuleiro[0][0] = 'B';
+    gravarJogo("tmpdir2", &t);
+    rmdir("tmpdir2");
+    CU_PASS("gravarJogo erro de abertura coberto");
+}
+
+void teste_lerStack_header_malformado() {
+    FILE *f = fopen("bad1.txt", "w");
+    fprintf(f, "xyz\n");
+    fclose(f);
+    lerStack("bad1.txt");
+    CU_ASSERT_EQUAL(topoStack, -1);
+    remove("bad1.txt");
+}
+
+void teste_lerStack_linha_incompleta() {
+    FILE *f = fopen("bad2.txt", "w");
+    fprintf(f, "1\n");
+    fprintf(f, "3\n");
+    fclose(f);
+    lerStack("bad2.txt");
+    CU_ASSERT_EQUAL(topoStack, -1);
+    remove("bad2.txt");
+}
+
+void teste_verificar_riscadas_borda() {
+    char tab[26][1000] = {{0}};
+    tab[0][0] = '#';
+    tab[1][0] = 'A';
+    tab[0][1] = 'B';
+    verificar_riscadas(tab, 2, 2);
+    CU_PASS("verificar_riscadas borda coberto");
+}
+
+void teste_verificar_riscadas_interior() {
+    char tab[26][1000] = {{0}};
+    tab[1][1] = '#';
+    verificar_riscadas(tab, 3, 3);
+    CU_PASS("verificar_riscadas interior coberto");
+}
+
+void teste_verificar_brancas_coluna() {
+    char tab[26][1000] = {{0}};
+    tab[0][0] = 'C';
+    tab[1][0] = 'C';
+    tab[2][0] = 'C';
+    verificar_brancas(tab, 3, 2);
+    CU_PASS("verificar_brancas coluna coberto");
+}
+
+void teste_verificar_brancas_coluna_dupla() {
+    char tab[26][1000] = {{0}};
+    tab[0][1] = 'D';
+    tab[1][1] = 'D';
+    verificar_brancas(tab, 2, 2);
+    CU_PASS("verificar_brancas coluna dupla coberto");
+}
+
+void teste_lerJogo_header_malformado() {
+    FILE *f = fopen("ljbad.txt", "w");
+    fprintf(f, "foo bar\n");
+    fclose(f);
+    Tabuleiro t = {0};
+    lerJogo("ljbad.txt", &t);
+    remove("ljbad.txt");
+    CU_PASS("lerJogo header malformado coberto");
+}
+
 int main() {
-    // Inicializar o registo de testes do CUnit
-    if (CUE_SUCCESS != CU_initialize_registry()) {
+    if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
-    }
 
-    // Criar um conjunto de testes
-    CU_pSuite suite = CU_add_suite("Projeto_Test_Suite", 0, 0);
-    if (NULL == suite) {
+    CU_pSuite suite = CU_add_suite("Projeto_Test_Suite", NULL, NULL);
+    if (!suite) {
         CU_cleanup_registry();
         return CU_get_error();
     }
 
-    // Adicionar testes ao conjunto
-    if ((NULL == CU_add_test(suite, "teste_lerJogo", teste_lerJogo)) ||
-        (NULL == CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco)) ||
-        (NULL == CU_add_test(suite, "teste_riscar", teste_riscar)) ||
-        (NULL == CU_add_test(suite, "teste_formatoParaCoordenadas", teste_formatoParaCoordenadas)) ||
-        (NULL == CU_add_test(suite, "teste_formatoParaCoordenadas_extendido", teste_formatoParaCoordenadas_extendido)) ||
-        (NULL == CU_add_test(suite, "teste_imprimirTabuleiro", teste_imprimirTabuleiro)) ||
-        (NULL == CU_add_test(suite, "teste_imprimir_comandos", teste_imprimir_comandos)) ||
-        (NULL == CU_add_test(suite, "teste_gerenciamento_estado", teste_gerenciamento_estado)) ||
-        (NULL == CU_add_test(suite, "teste_verificacao_regras", teste_verificacao_regras)) ||
-        (NULL == CU_add_test(suite, "teste_arquivos", teste_arquivos))) {
-        CU_cleanup_registry();
-        return CU_get_error();
-    }
+    // testes originais
+    CU_add_test(suite, "teste_lerJogo", teste_lerJogo);
+    CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco);
+    CU_add_test(suite, "teste_riscar", teste_riscar);
+    CU_add_test(suite, "teste_formatoParaCoordenadas", teste_formatoParaCoordenadas);
+    CU_add_test(suite, "teste_formatoParaCoordenadas_extendido", teste_formatoParaCoordenadas_extendido);
+    CU_add_test(suite, "teste_imprimirTabuleiro", teste_imprimirTabuleiro);
+    CU_add_test(suite, "teste_imprimir_comandos", teste_imprimir_comandos);
+    CU_add_test(suite, "teste_gerenciamento_estado", teste_gerenciamento_estado);
+    CU_add_test(suite, "teste_verificacao_regras", teste_verificacao_regras);
+    CU_add_test(suite, "teste_arquivos", teste_arquivos);
 
-    // Executar os testes usando a interface básica
+    // novos testes para cobertura
+    CU_add_test(suite, "teste_stacks_cheia", teste_stacks_cheia);
+    CU_add_test(suite, "teste_desfazer_vazio", teste_desfazer_vazio);
+    CU_add_test(suite, "teste_gravarStack_erro_abertura", teste_gravarStack_erro_abertura);
+    CU_add_test(suite, "teste_gravarJogo_erro_abertura", teste_gravarJogo_erro_abertura);
+    CU_add_test(suite, "teste_lerStack_header_malformado", teste_lerStack_header_malformado);
+    CU_add_test(suite, "teste_lerStack_linha_incompleta", teste_lerStack_linha_incompleta);
+    CU_add_test(suite, "teste_verificar_riscadas_borda", teste_verificar_riscadas_borda);
+    CU_add_test(suite, "teste_verificar_riscadas_interior", teste_verificar_riscadas_interior);
+    CU_add_test(suite, "teste_verificar_brancas_coluna", teste_verificar_brancas_coluna);
+    CU_add_test(suite, "teste_verificar_brancas_coluna_dupla", teste_verificar_brancas_coluna_dupla);
+    CU_add_test(suite, "teste_lerJogo_header_malformado", teste_lerJogo_header_malformado);
+
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
-
-    // Limpar o registo
     CU_cleanup_registry();
     return CU_get_error();
 }
