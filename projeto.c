@@ -181,7 +181,9 @@ void lerJogo(char *nome, Tabuleiro *t) {
         return;
     }
 
-    fscanf(f, "%d %d", &t->colunas, &t->linhas);
+    if (fscanf(f, "%d %d", &t->colunas, &t->linhas)!=2){
+        printf("Erro a ler tabuleiro.\n");
+    };
     fgetc(f);
 
     for (int i = 0; i < t->linhas; i++) {
