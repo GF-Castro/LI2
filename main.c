@@ -15,7 +15,6 @@ int main() {
         printf("Comando: ");
         if (scanf("%s", comando) != 1) {
             printf("Erro a ler comando.\n");
-            continue;
         }
 
         if (strcmp(comando, "l") == 0) {
@@ -32,12 +31,10 @@ int main() {
         else if (strcmp(comando, "b") == 0 || strcmp(comando, "r") == 0) {
             if (scanf("%s", coord) != 1) {
                 printf("Erro a ler coordenada.\n");
-                continue;
             }
 
             if (!formatoParaCoordenadas(coord, &x, &y)) {
                 printf("Coordenada inválida. Use formato como 'c3'.\n");
-                continue;
             }
 
             guardar_estado(&t);

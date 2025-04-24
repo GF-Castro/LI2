@@ -367,7 +367,6 @@ int main() {
     CU_add_test(suite, "teste_verificacao_regras", teste_verificacao_regras);
     CU_add_test(suite, "teste_arquivos", teste_arquivos);
 
-    // novos testes para cobertura
     CU_add_test(suite, "teste_stacks_cheia", teste_stacks_cheia);
     CU_add_test(suite, "teste_desfazer_vazio", teste_desfazer_vazio);
     CU_add_test(suite, "teste_gravarStack_erro_abertura", teste_gravarStack_erro_abertura);

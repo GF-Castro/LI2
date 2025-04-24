@@ -228,8 +228,8 @@ void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas) {
 
                 // Agora comparamos brancas com o número de vizinhas existentes
                 if (brancas < vizinhas) {
-                    char coluna = 'a' + j;      // j = 0 → 'a', j = 1 → 'b', etc.
-                    int  linha  = i + 1;        // i = 0 → 1, i = 1 → 2, etc.
+                    char coluna = 'a' + j;      
+                    int  linha  = i + 1;        
                     
                     printf("Restrição violada: Casa %c%d não está rodeada por %d vizinhas brancas.\n",
                            coluna, linha, vizinhas);
