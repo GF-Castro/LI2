@@ -8,16 +8,6 @@
 Tabuleiro stack[tamanhoStack];
 int topoStack = -1;
 
-/*int formatoParaCoordenadas(char *input, int *x, int *y) {
-    if (strlen(input) < 2 || !isalpha(input[0]) || !isdigit(input[1])) {
-        return 0;
-    }
-    *x = input[0] - 'a';
-    *y = input[1] - '1';
-    return 1;﻿
-}
-*/
-
 int formatoParaCoordenadas(char *input, int *x, int *y) {
     if (input == NULL || strlen(input) < 2) return 0;
 
@@ -27,10 +17,10 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
     *x = tolower(input[0]) - 'a';
 
     // Verifica se o resto é só número (sem caracteres extras)
-    char *endptr;
-    long numero = strtol(input + 1, &endptr, 10);
+    char *ponteirofim;
+    long numero = strtol(input + 1, &ponteirofim, 10);
 
-    if (*endptr != '\0') return 0;  // Há caracteres a mais após o número
+    if (*ponteirofim != '\0') return 0;  // Há caracteres a mais após o número
     if (numero < 1) return 0;       // Número deve ser positivo
 
     *y = (int)numero - 1;
