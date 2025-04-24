@@ -8,7 +8,7 @@ TEST = testes.c projeto.c
 HDRS = projeto.h
 
 # Def 'all'
-all: main teste gcov
+all: test gcov run
 
 # Comandos main
 main:
