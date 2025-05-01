@@ -57,6 +57,83 @@ void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
     }
 }
 
+// Função para transformar casas vizinhas de riscas em brancas, retornando se houve mudança
+int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
+    int mudou = 0;
+    if (i > 0 && islower((unsigned char)t->tabuleiro[i - 1][j])) {
+        t->tabuleiro[i - 1][j] = toupper((unsigned char)t->tabuleiro[i - 1][j]);
+        mudou = 1;
+    }
+    if (i < t->linhas - 1 && islower((unsigned char)t->tabuleiro[i + 1][j])) {
+        t->tabuleiro[i + 1][j] = toupper((unsigned char)t->tabuleiro[i + 1][j]);
+        mudou = 1;
+    }
+    if (j > 0 && islower((unsigned char)t->tabuleiro[i][j - 1])) {
+        t->tabuleiro[i][j - 1] = toupper((unsigned char)t->tabuleiro[i][j - 1]);
+        mudou = 1;
+    }
+    if (j < t->colunas - 1 && islower((unsigned char)t->tabuleiro[i][j + 1])) {
+        t->tabuleiro[i][j + 1] = toupper((unsigned char)t->tabuleiro[i][j + 1]);
+        mudou = 1;
+    }
+    return mudou;
+}
+
+int aplicar_inferencia(Tabuleiro *t) {
+    int alterado;
+    int total_mudou = 0;
+
+    do {
+        alterado = 0;
+
+        for (int i = 0; i < t->linhas; i++) {
+            for (int j = 0; j < t->colunas; j++) {
+                char atual = t->tabuleiro[i][j];
+
+                // Regra 1: riscar repetidos de brancas
+                if (isupper((unsigned char)atual)) {
+                    for (int k = 0; k < t->colunas; k++) {
+                        if (k != j && t->tabuleiro[i][k] == atual) {
+                            t->tabuleiro[i][k] = '#';
+                            alterado = 1;
+                        }
+                    }
+                    for (int k = 0; k < t->linhas; k++) {
+                        if (k != i && t->tabuleiro[k][j] == atual) {
+                            t->tabuleiro[k][j] = '#';
+                            alterado = 1;
+                        }
+                    }
+                }
+
+                // Regra 2: vizinhos de # viram brancos
+                if (t->tabuleiro[i][j] == '#') {
+                    alterado |= pintar_vizinhos_de_branco(t, i, j);
+                }
+
+                // Regra 3: se riscar isolaria, pintar de branco
+                if (islower((unsigned char)atual)) {
+                    int pode_riscar = 0;
+                    if (i > 0 && isupper((unsigned char)t->tabuleiro[i - 1][j])) pode_riscar = 1;
+                    if (i < t->linhas - 1 && isupper((unsigned char)t->tabuleiro[i + 1][j])) pode_riscar = 1;
+                    if (j > 0 && isupper((unsigned char)t->tabuleiro[i][j - 1])) pode_riscar = 1;
+                    if (j < t->colunas - 1 && isupper((unsigned char)t->tabuleiro[i][j + 1])) pode_riscar = 1;
+
+                    if (!pode_riscar) {
+                        t->tabuleiro[i][j] = toupper((unsigned char)atual);
+                        alterado = 1;
+                    }
+                }
+            }
+        }
+
+        if (alterado) total_mudou = 1;
+
+    } while (alterado);
+
+    return total_mudou;
+}
+
 // Funções de gerenciamento de estado
 void stacks(Tabuleiro estado) {
     if (topoStack < tamanhoStack - 1) {

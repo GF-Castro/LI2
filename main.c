@@ -52,7 +52,16 @@ int main() {
         } 
         else if (strcmp(comando, "v") == 0) {
             verificar_estado(t.tabuleiro, t.linhas, t.colunas);
-        }        
+        }
+        else if (strcmp(comando, "a") == 0) {
+            guardar_estado(&t);
+            if (aplicar_inferencia(&t)) {
+                printf("Inferências aplicadas com sucesso!\n");
+            } else {
+                printf("Nenhuma mudança realizada.\n");
+            }
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        }
         else {
             printf("Comando inválido. Tente novamente.\n");
             imprimir_comandos();

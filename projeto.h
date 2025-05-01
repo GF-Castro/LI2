@@ -19,6 +19,8 @@ void imprimir_comandos();
 void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas);
 void pintarDeBranco(char tabuleiro[26][1000], int linhas, int colunas, int x, int y);
 void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y);
+int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j);
+int aplicar_inferencia(Tabuleiro *t);
 void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas);
 void lerJogo(char *nome, Tabuleiro *t);
 void gravarJogo(char *nome, Tabuleiro *t);
