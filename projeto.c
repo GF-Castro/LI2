@@ -90,16 +90,16 @@ int aplicar_inferencia(Tabuleiro *t) {
             for (int j = 0; j < t->colunas; j++) {
                 char atual = t->tabuleiro[i][j];
 
-                // Regra 1: riscar repetidos de brancas
+                // Regra 1: riscar repetidos de brancas (considerando maiúsculas e suas versões minúsculas)
                 if (isupper((unsigned char)atual)) {
                     for (int k = 0; k < t->colunas; k++) {
-                        if (k != j && t->tabuleiro[i][k] == atual) {
+                        if (k != j && (t->tabuleiro[i][k] == atual || t->tabuleiro[i][k] == tolower(atual))) {
                             t->tabuleiro[i][k] = '#';
                             alterado = 1;
                         }
                     }
                     for (int k = 0; k < t->linhas; k++) {
-                        if (k != i && t->tabuleiro[k][j] == atual) {
+                        if (k != i && (t->tabuleiro[k][j] == atual || t->tabuleiro[k][j] == tolower(atual))) {
                             t->tabuleiro[k][j] = '#';
                             alterado = 1;
                         }
