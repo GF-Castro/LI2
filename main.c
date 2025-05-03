@@ -54,11 +54,16 @@ int main() {
             verificar_estado(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "a") == 0) {
+            guardar_estado(&t);  // Salvar estado atual antes de aplicar correções
+            aplicar_correcoes(&t);
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        }
+        else if (strcmp(comando, "R") == 0) {
             guardar_estado(&t);
-            if (aplicar_inferencia(&t)) {
-                printf("Inferências aplicadas com sucesso!\n");
+            if (resolve_jogo(&t)) {
+                printf("Solução:\n");
             } else {
-                printf("Nenhuma mudança realizada.\n");
+                printf("Não foi possível resolver o tabuleiro.\n");
             }
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }

@@ -79,7 +79,54 @@ int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
     return mudou;
 }
 
-int aplicar_inferencia(Tabuleiro *t) {
+void aplicar_correcoes(Tabuleiro *t) {
+    printf("Aplicando correções com base nas inferências...\n");
+    int alteracoes = 0;
+
+    // Primeiro passo: riscar minúsculas correspondentes e pintar vizinhos da casa maiúscula
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper((unsigned char)c)) {
+                // Riscar todas as mesmas letras minúsculas na linha
+                for (int col = 0; col < t->colunas; col++) {
+                    if (t->tabuleiro[i][col] == tolower(c)) {
+                        t->tabuleiro[i][col] = '#';
+                        alteracoes++;
+                    }
+                }
+                // Riscar todas as mesmas letras minúsculas na coluna
+                for (int lin = 0; lin < t->linhas; lin++) {
+                    if (t->tabuleiro[lin][j] == tolower(c)) {
+                        t->tabuleiro[lin][j] = '#';
+                        alteracoes++;
+                    }
+                }
+                // Pintar de branco vizinhos da casa maiúscula
+                alteracoes += pintar_vizinhos_de_branco(t, i, j);
+            }
+        }
+    }
+
+    // Segundo passo: pintar vizinhos de cada casa riscada
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (t->tabuleiro[i][j] == '#') {
+                alteracoes += pintar_vizinhos_de_branco(t, i, j);
+            }
+        }
+    }
+
+    // Resultado
+    if (alteracoes == 0) {
+        printf("Nenhuma correção foi necessária.\n");
+    } else {
+        printf("Correções concluídas. Total de alterações: %d.\n", alteracoes);
+    }
+}
+
+
+int resolve_jogo(Tabuleiro *t) {
     int alterado;
     int total_mudou = 0;
 
@@ -347,7 +394,6 @@ void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas) {
         }
     }
 }
-
 
 void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
     printf("Verificando restrições...\n");
