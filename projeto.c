@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 // Declarações globais
 Tabuleiro stack[tamanhoStack];
@@ -395,13 +396,6 @@ void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas) {
     }
 }
 
-void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
-    printf("Verificando restrições...\n");
-    verificar_riscadas(tabuleiro, linhas, colunas);
-    verificar_brancas(tabuleiro, linhas, colunas);
-    printf("Verificação concluída.\n");
-}
-
 // Funções de interface
 void imprimir_comandos() {
     printf("Comandos disponíveis:\n");
@@ -415,4 +409,83 @@ void imprimir_comandos() {
     printf("R - Resolver o jogo\n");
     printf("d - Desfazer última ação\n");
     printf("s - Sair\n");
+}
+
+// Função auxiliar: verifica se posição é válida
+static bool dentro(int i, int j, int L, int C) {
+    return i >= 0 && i < L && j >= 0 && j < C;
+}
+
+void verificar_conectividade(char tabuleiro[26][1000], int L, int C) {
+    bool visitada[26][1000] = {false};
+    int total_brancas = 0;
+    int start_i = -1, start_j = -1;
+
+    // Conta casas brancas (maiúsculas) e encontra uma inicial
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < C; j++) {
+            if (isupper((unsigned char)tabuleiro[i][j])) {
+                total_brancas++;
+                if (start_i < 0) {
+                    start_i = i;
+                    start_j = j;
+                }
+            }
+        }
+    }
+    if (total_brancas <= 1) {
+        // Menos de 2 casas brancas, nada a verificar
+        return;
+    }
+
+    // BFS apenas através de casas brancas (maiúsculas)
+    int *fila = malloc(sizeof(int) * L * C * 2);
+    int frente = 0, tras = 0;
+    fila[tras++] = start_i;
+    fila[tras++] = start_j;
+    int cont_visitadas = 0;
+
+    while (frente < tras) {
+        int i = fila[frente++];
+        int j = fila[frente++];
+        if (!visitada[i][j] && isupper((unsigned char)tabuleiro[i][j])) {
+            visitada[i][j] = true;
+            cont_visitadas++;
+            // Vizinhança ortogonal
+            const int di[4] = {-1, 1, 0, 0};
+            const int dj[4] = {0, 0, -1, 1};
+            for (int d = 0; d < 4; d++) {
+                int ni = i + di[d];
+                int nj = j + dj[d];
+                if (dentro(ni, nj, L, C) && !visitada[ni][nj] && isupper((unsigned char)tabuleiro[ni][nj])) {
+                    fila[tras++] = ni;
+                    fila[tras++] = nj;
+                }
+            }
+        }
+    }
+    free(fila);
+
+    // Verifica se todas as brancas foram visitadas
+    if (cont_visitadas < total_brancas) {
+        printf("Restrição violada: há casas brancas isoladas no tabuleiro.\n");
+        for (int i = 0; i < L; i++) {
+            for (int j = 0; j < C; j++) {
+                if (isupper((unsigned char)tabuleiro[i][j]) && !visitada[i][j]) {
+                    char col = 'a' + j;
+                    int lin = i + 1;
+                    printf("  Casa %c%d não está acessível.\n", col, lin);
+                }
+            }
+        }
+    }
+}
+
+// Alteração em verificar_estado para chamar a conectividade
+void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
+    printf("Verificando restrições...\n");
+    verificar_riscadas(tabuleiro, linhas, colunas);
+    verificar_brancas(tabuleiro, linhas, colunas);
+    verificar_conectividade(tabuleiro, linhas, colunas);  // Etapa 3
+    printf("Verificação concluída.\n");
 }
