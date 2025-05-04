@@ -345,6 +345,78 @@ void teste_lerJogo_header_malformado() {
     CU_PASS("lerJogo header malformado coberto");
 }
 
+
+
+// Novo teste para aplicar correções (Regras 1, 2, 3)
+void teste_aplicar_correcoes() {
+    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    strcpy(t.tabuleiro[0], "aAB");
+    strcpy(t.tabuleiro[1], "#cD");
+    strcpy(t.tabuleiro[2], "efG");
+    
+    aplicar_correcoes(&t);
+    
+    // Regra 1: 'a' na linha 0 deve ser riscado por causa de 'A'
+    CU_ASSERT_EQUAL(t.tabuleiro[0][0], '#');
+    // Regra 2: vizinhos de '#' (posição 1,0) devem ser maiúsculos
+    CU_ASSERT_EQUAL(t.tabuleiro[0][0], '#');
+    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C'); // 'c' convertido para 'C'
+    // Regra 3: 'e' não pode ser riscado para não isolar
+    CU_ASSERT_EQUAL(t.tabuleiro[2][0], 'E');
+}
+
+// Teste para a função resolve_jogo
+void teste_resolve_jogo() {
+    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    strcpy(t.tabuleiro[0], "abc");
+    strcpy(t.tabuleiro[1], "def");
+    strcpy(t.tabuleiro[2], "ghi");
+    
+    // Aplicar resolução
+    int mudou = resolve_jogo(&t);
+    CU_ASSERT_EQUAL(mudou, 1);
+    // Verificar se alguma célula foi alterada
+        CU_ASSERT_TRUE(isupper(t.tabuleiro[0][0]) || t.tabuleiro[0][0] == '#');
+}
+
+// Teste para verificar conectividade com células isoladas
+void teste_verificar_conectividade_isoladas() {
+    char tab[26][1000] = {{0}};
+    tab[0][0] = 'A';
+    tab[2][2] = 'B'; // Isolada de 'A'
+    verificar_conectividade(tab, 3, 3);
+}
+
+// Teste para formatoParaCoordenadas com input NULL
+void teste_formatoParaCoordenadas_NULL() {
+    int x, y;
+    CU_ASSERT_FALSE(formatoParaCoordenadas(NULL, &x, &y));
+}
+
+// Teste para pintar_vizinhos_de_branco
+void teste_pintar_vizinhos_de_branco() {
+    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    t.tabuleiro[1][1] = '#';
+    t.tabuleiro[0][1] = 'a';
+    t.tabuleiro[1][0] = 'b';
+    
+    int mudou = pintar_vizinhos_de_branco(&t, 1, 1);
+    CU_ASSERT_EQUAL(mudou, 1);
+    CU_ASSERT_EQUAL(t.tabuleiro[0][1], 'A');
+    CU_ASSERT_EQUAL(t.tabuleiro[1][0], 'B');
+}
+
+// Teste para risco que isolaria células
+void teste_risco_isolamento() {
+    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    strcpy(t.tabuleiro[0], "A##");
+    strcpy(t.tabuleiro[1], "##B");
+    // Tentar riscar a célula (1,1) deve falhar e pintar de branco
+    t.tabuleiro[1][1] = 'c';
+    aplicar_correcoes(&t);
+    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
+}
+
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
@@ -355,7 +427,7 @@ int main() {
         return CU_get_error();
     }
 
-    // testes originais
+    // Testes existentes
     CU_add_test(suite, "teste_lerJogo", teste_lerJogo);
     CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco);
     CU_add_test(suite, "teste_riscar", teste_riscar);
@@ -366,7 +438,6 @@ int main() {
     CU_add_test(suite, "teste_gerenciamento_estado", teste_gerenciamento_estado);
     CU_add_test(suite, "teste_verificacao_regras", teste_verificacao_regras);
     CU_add_test(suite, "teste_arquivos", teste_arquivos);
-
     CU_add_test(suite, "teste_stacks_cheia", teste_stacks_cheia);
     CU_add_test(suite, "teste_desfazer_vazio", teste_desfazer_vazio);
     CU_add_test(suite, "teste_gravarStack_erro_abertura", teste_gravarStack_erro_abertura);
@@ -378,6 +449,14 @@ int main() {
     CU_add_test(suite, "teste_verificar_brancas_coluna", teste_verificar_brancas_coluna);
     CU_add_test(suite, "teste_verificar_brancas_coluna_dupla", teste_verificar_brancas_coluna_dupla);
     CU_add_test(suite, "teste_lerJogo_header_malformado", teste_lerJogo_header_malformado);
+
+    // Novos testes adicionados
+    CU_add_test(suite, "teste_aplicar_correcoes", teste_aplicar_correcoes);
+    CU_add_test(suite, "teste_resolve_jogo", teste_resolve_jogo);
+    CU_add_test(suite, "teste_verificar_conectividade_isoladas", teste_verificar_conectividade_isoladas);
+    CU_add_test(suite, "teste_formatoParaCoordenadas_NULL", teste_formatoParaCoordenadas_NULL);
+    CU_add_test(suite, "teste_pintar_vizinhos_de_branco", teste_pintar_vizinhos_de_branco);
+    CU_add_test(suite, "teste_risco_isolamento", teste_risco_isolamento);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();

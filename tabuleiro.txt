@@ -1,6 +1,3 @@
-5 5
-ecadc
-dcdec
-bddce
-cdeeb
-accbb
+2 2
+AB
+CD
