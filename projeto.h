@@ -1,6 +1,6 @@
 #ifndef PROJETO_H
 #define PROJETO_H
-
+#include <stdbool.h>
 // Definição de constantes e structs
 #define tamanhoStack 100
 
@@ -36,6 +36,7 @@ void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas);
 void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas);
 void verificar_conectividade(char tabuleiro[26][1000], int linhas, int colunas);
 void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas);
+static bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
 
 #endif
 

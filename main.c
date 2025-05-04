@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdbool.h>
 
 int main() {
     char comando[1000];
@@ -54,17 +55,32 @@ int main() {
             verificar_estado(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "a") == 0) {
-            guardar_estado(&t);  // Salvar estado atual antes de aplicar correções
+            guardar_estado(&t); // Salva estado antes de aplicar
             aplicar_correcoes(&t);
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "R") == 0) {
-            guardar_estado(&t);
-            if (resolve_jogo(&t)) {
-                printf("Solução:\n");
+            guardar_estado(&t); // Salva o estado atual antes de resolver
+            int resolvido = resolve_jogo(&t); // resolve_jogo retorna 1 se alterou algo, 0 caso contrário
+            
+            if (resolvido) {
+                printf("Solução encontrada:\n");
             } else {
-                printf("Não foi possível resolver o tabuleiro.\n");
+                printf("O tabuleiro já está resolvido ou não foi possível alterar.\n");
             }
+            
+            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        }
+        else if (strcmp(comando, "A") == 0) {
+            guardar_estado(&t); // Salva estado inicial
+            do {
+                Tabuleiro copia = t; // Cria cópia para comparar
+                aplicar_correcoes(&t);
+                if (memcmp(copia.tabuleiro, t.tabuleiro, sizeof(copia.tabuleiro)) == 0) {
+                    break; // Nenhuma alteração, sai do loop
+                }
+                guardar_estado(&t); // Salva após alteração
+            } while (1);
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else {
