@@ -6,7 +6,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
-
+#include <ctype.h>
 
 // Teste para a função lerJogo
 void teste_lerJogo() {
