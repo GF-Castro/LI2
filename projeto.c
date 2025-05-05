@@ -29,6 +29,8 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
 }
 
 // Funções relacionadas ao tabuleiro
+#include <stdio.h>
+
 void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
@@ -193,21 +195,25 @@ void lerJogo(char *nome, Tabuleiro *t) {
         printf("Erro ao abrir ficheiro: %s\n", nome);
         return;
     }
-
-    if (fscanf(f, "%d %d", &t->colunas, &t->linhas)!=2){
-        printf("Erro a ler tabuleiro.\n");
-    };
+    if (fscanf(f, "%d %d", &t->linhas, &t->colunas) != 2) {
+        printf("Erro ao ler dimensões do tabuleiro.\n");
+        fclose(f);
+        return;
+    }
     fgetc(f);
-
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
-            t->tabuleiro[i][j] = fgetc(f);
+            char c = fgetc(f);
+            if (c == EOF) {
+                printf("Erro: Dados insuficientes no ficheiro.\n");
+                fclose(f);
+                return;
+            }
+            t->tabuleiro[i][j] = c;
         }
         fgetc(f);
     }
-
     fclose(f);
-    lerStack("stack.txt");
 }
 
 // Funções de verificação e regras

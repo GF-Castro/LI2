@@ -16,7 +16,7 @@ int main() {
         printf("Comando: ");
         if (scanf("%s", comando) != 1) {
             printf("Erro a ler comando.\n");
-            continue; // Skip further processing
+            continue; // Ignora o processamento adicional
         }
 
         if (strcmp(comando, "l") == 0) {
@@ -33,15 +33,15 @@ int main() {
         else if (strcmp(comando, "b") == 0 || strcmp(comando, "r") == 0) {
             if (scanf("%s", coord) != 1) {
                 printf("Erro a ler coordenada.\n");
-                continue; // Skip further processing
+                continue; // Ignora o processamento adicional
             }
 
             if (!formatoParaCoordenadas(coord, &x, &y)) {
                 printf("Coordenada inválida. Use formato como 'c3'.\n");
-                continue; // Skip further processing
+                continue; // Ignora o processamento adicional
             }
 
-            guardar_estado(&t); // Save current state only if input is valid
+            guardar_estado(&t); // Guarda o estado atual do jogo, apenas se a entrada for inválida
 
             if (strcmp(comando, "b") == 0)
                 pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, x, y);
