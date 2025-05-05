@@ -395,7 +395,7 @@ void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
 }
 
 // Função auxiliar de conectividade usada pela Regra 3 permanece igual...
-static bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
+bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
     Tabuleiro tmp = *orig;
     tmp.tabuleiro[ri][rj] = '#';
     bool visitada[26][1000] = {false};
