@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
-// Declarações globais
-Tabuleiro stack[tamanhoStack];
-int topoStack = -1;
+// Declaração do array de estados e topo da stack
+Tabuleiro stack[tamanhoStack];  // Guarda os estados anteriores do tabuleiro
+int topoStack = -1;             // Índice do topo da stack (inicialmente vazio)
 
 int formatoParaCoordenadas(char *input, int *x, int *y) {
     if (input == NULL || strlen(input) < 2) return 0;
@@ -27,9 +27,6 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
     *y = (int)numero - 1;
     return 1;
 }
-
-// Funções relacionadas ao tabuleiro
-#include <stdio.h>
 
 void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
@@ -62,61 +59,67 @@ void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
 
 // Função para transformar casas vizinhas de riscas em brancas, retornando se houve mudança
 int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
-    int mudou = 0;
-    if (i > 0 && islower((unsigned char)t->tabuleiro[i - 1][j])) {
-        t->tabuleiro[i - 1][j] = toupper((unsigned char)t->tabuleiro[i - 1][j]);
-        mudou = 1;
+    int alterado = 0;
+    int dx[] = {-1, 1, 0, 0};
+    int dy[] = {0, 0, -1, 1};
+
+    for (int d = 0; d < 4; d++) {
+        int ni = i + dx[d];
+        int nj = j + dy[d];
+
+        if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
+            char c = t->tabuleiro[ni][nj];
+            if (islower((char)c)) {
+                t->tabuleiro[ni][nj] = toupper((char)c);
+                alterado = 1;
+            }
+        }
     }
-    if (i < t->linhas - 1 && islower((unsigned char)t->tabuleiro[i + 1][j])) {
-        t->tabuleiro[i + 1][j] = toupper((unsigned char)t->tabuleiro[i + 1][j]);
-        mudou = 1;
-    }
-    if (j > 0 && islower((unsigned char)t->tabuleiro[i][j - 1])) {
-        t->tabuleiro[i][j - 1] = toupper((unsigned char)t->tabuleiro[i][j - 1]);
-        mudou = 1;
-    }
-    if (j < t->colunas - 1 && islower((unsigned char)t->tabuleiro[i][j + 1])) {
-        t->tabuleiro[i][j + 1] = toupper((unsigned char)t->tabuleiro[i][j + 1]);
-        mudou = 1;
-    }
-    return mudou;
+
+    return alterado;
 }
 
-// Funções de gerenciamento de estado
+// Função que empilha um estado do tabuleiro
 void stacks(Tabuleiro estado) {
-    if (topoStack < tamanhoStack - 1) {
-        topoStack++;
-        stack[topoStack] = estado;
+    if (topoStack < tamanhoStack - 1) {      // Verifica se há espaço na stack
+        topoStack++;                         // Avança o topo
+        stack[topoStack] = estado;           // Guarda o novo estado
     } else {
         printf("Stack cheia. Não é possível guardar mais estados.\n");
     }
 }
 
+// Função que retira o último estado guardado (desfazer)
 Tabuleiro desempilhar() {
     if (topoStack >= 0) {
-        return stack[topoStack--];
+        return stack[topoStack--];           // Retorna e remove o topo da stack
     } else {
         printf("Stack vazia.\n");
-        Tabuleiro vazio = {{{0}}, 0, 0};
+        Tabuleiro vazio = {{{0}}, 0, 0};     // Retorna tabuleiro vazio em caso de erro
         return vazio;
     }
 }
 
+// Função que guarda o estado atual do tabuleiro na stack
 void guardar_estado(Tabuleiro *t) {
-    stacks(*t);
+    stacks(*t);  // Copia o estado atual para a stack
 }
 
+
+// Função que desfaz a última ação, restaurando o tabuleiro anterior
 void desfazer(Tabuleiro *t) {
-    Tabuleiro tabuleiroAnterior = desempilhar();
+    Tabuleiro tabuleiroAnterior = desempilhar();  // Recupera o estado anterior
+
+    // Só substitui se o estado desempilhado for válido
     if (tabuleiroAnterior.linhas > 0 && tabuleiroAnterior.colunas > 0) {
         *t = tabuleiroAnterior;
-   // Funções auxiliares
     } else {
         printf("Não é possível desfazer mais ações.\n");
     }
 }
 
-// Funções de gravação e leitura
+
+// Grava a stack de estados num ficheiro
 void gravarStack(char *nome) {
     FILE *f = fopen(nome, "w");
     if (!f) {
@@ -124,8 +127,9 @@ void gravarStack(char *nome) {
         return;
     }
 
-    fprintf(f, "%d\n", topoStack);
+    fprintf(f, "%d\n", topoStack);  // Escreve topo da stack
 
+    // Escreve cada estado da stack
     for (int i = 0; i <= topoStack; i++) {
         fprintf(f, "%d %d\n", stack[i].linhas, stack[i].colunas);
         for (int y = 0; y < stack[i].linhas; y++) {
@@ -139,6 +143,7 @@ void gravarStack(char *nome) {
     fclose(f);
 }
 
+// Grava o estado atual do jogo e a stack
 void gravarJogo(char *nome, Tabuleiro *t) {
     FILE *arquivo = fopen(nome, "w");
     if (arquivo == NULL) {
@@ -146,8 +151,9 @@ void gravarJogo(char *nome, Tabuleiro *t) {
         return;
     }
 
-    fprintf(arquivo, "%d %d\n", t->colunas, t->linhas);
+    fprintf(arquivo, "%d %d\n", t->colunas, t->linhas);  // Grava dimensões
 
+    // Grava tabuleiro linha por linha
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
             fputc(t->tabuleiro[i][j], arquivo);
@@ -156,9 +162,13 @@ void gravarJogo(char *nome, Tabuleiro *t) {
     }
 
     fclose(arquivo);
+
+    // Também grava a stack
     gravarStack("stack.txt");
 }
 
+
+// Lê o histórico da stack de um ficheiro
 void lerStack(char *nome) {
     FILE *f = fopen(nome, "r");
     if (!f) {
@@ -166,12 +176,14 @@ void lerStack(char *nome) {
         return;
     }
 
+    // Lê o topo
     if (fscanf(f, "%d\n", &topoStack) != 1) {
         fclose(f);
         topoStack = -1;
         return;
     }
 
+    // Lê os estados
     for (int i = 0; i <= topoStack; i++) {
         if (fscanf(f, "%d %d\n", &stack[i].linhas, &stack[i].colunas) != 2) {
             topoStack = i - 1;
@@ -182,25 +194,32 @@ void lerStack(char *nome) {
             for (int x = 0; x < stack[i].colunas; x++) {
                 stack[i].tabuleiro[y][x] = fgetc(f);
             }
-            fgetc(f);
+            fgetc(f); // Salta '\n'
         }
     }
 
     fclose(f);
 }
 
+
+// Lê o estado atual do tabuleiro de um ficheiro
 void lerJogo(char *nome, Tabuleiro *t) {
     FILE *f = fopen(nome, "r");
     if (!f) {
         printf("Erro ao abrir ficheiro: %s\n", nome);
         return;
     }
+
+    // Lê dimensões
     if (fscanf(f, "%d %d", &t->linhas, &t->colunas) != 2) {
         printf("Erro ao ler dimensões do tabuleiro.\n");
         fclose(f);
         return;
     }
-    fgetc(f);
+
+    fgetc(f);  // Consome '\n' após dimensões
+
+    // Lê o conteúdo do tabuleiro
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
             char c = fgetc(f);
@@ -211,222 +230,202 @@ void lerJogo(char *nome, Tabuleiro *t) {
             }
             t->tabuleiro[i][j] = c;
         }
-        fgetc(f);
+        fgetc(f); // Salta '\n'
     }
+
     fclose(f);
 }
 
-// Funções de verificação e regras
-void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas) {
-    for (int i = 0; i < linhas; i++) {
-        for (int j = 0; j < colunas; j++) {
-            if (tabuleiro[i][j] == '#') {
-                int brancas = 0;
-                int vizinhas = 0;
+// Verifica se todas as casas riscadas estão rodeadas de brancas
+void verificar_riscadas(Tabuleiro *t) {
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (t->tabuleiro[i][j] == '#') {  // Se for uma casa riscada
+                int brancas = 0, vizinhas = 0;
 
                 // Cima
                 if (i > 0) {
                     vizinhas++;
-                    if (isupper(tabuleiro[i-1][j])) brancas++;
+                    if (isupper(t->tabuleiro[i-1][j])) brancas++;
                 }
                 // Baixo
-                if (i < linhas-1) {
+                if (i < t->linhas - 1) {
                     vizinhas++;
-                    if (isupper(tabuleiro[i+1][j])) brancas++;
+                    if (isupper(t->tabuleiro[i+1][j])) brancas++;
                 }
                 // Esquerda
                 if (j > 0) {
                     vizinhas++;
-                    if (isupper(tabuleiro[i][j-1])) brancas++;
+                    if (isupper(t->tabuleiro[i][j-1])) brancas++;
                 }
                 // Direita
-                if (j < colunas-1) {
+                if (j < t->colunas - 1) {
                     vizinhas++;
-                    if (isupper(tabuleiro[i][j+1])) brancas++;
+                    if (isupper(t->tabuleiro[i][j+1])) brancas++;
                 }
 
-                // Agora comparamos brancas com o número de vizinhas existentes
+                // Regra: casa riscada deve estar rodeada por brancas
                 if (brancas < vizinhas) {
-                    char coluna = 'a' + j;      
-                    int  linha  = i + 1;        
-                    
-                    printf("Restrição violada: Casa %c%d não está rodeada por %d vizinhas brancas.\n",
-                           coluna, linha, vizinhas);
-                    
-                }
-            }
-        }
-    }
-}
-
-
-void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas) {
-    // Verifica repetições em cada linha
-    for (int i = 0; i < linhas; i++) {
-        int contador[26] = {0};
-
-        for (int j = 0; j < colunas; j++) {
-            if (isupper(tabuleiro[i][j])) {
-                contador[tabuleiro[i][j] - 'A']++;
-            }
-        }
-
-        for (int k = 0; k < 26; k++) {
-            if (contador[k] > 1) {
-                char letra = 'A' + k;
-                int linha_visual = i + 1;  
-                printf("Restrição violada: Letra %c foi repetida %d vezes na linha %d.\n",
-                       letra, contador[k], linha_visual);
-            }
-        }
-    }
-    // Verifica repetições em cada coluna
-    for (int j = 0; j < colunas; j++) {
-        int contador[26] = {0};
-        for (int i = 0; i < linhas; i++) {
-            if (isupper(tabuleiro[i][j])) {
-                contador[tabuleiro[i][j] - 'A']++;
-            }
-        }
-
-        for (int k = 0; k < 26; k++) {
-            if (contador[k] > 1) {
-                char letra = 'A' + k;
-                char coluna_letra = 'a' + j; 
-                printf("Restrição violada: Letra %c foi repetida %d vezes na coluna %c.\n",
-                       letra, contador[k], coluna_letra);
-            }
-        }
-    }
-}
-
-// Funções de interface
-void imprimir_comandos() {
-    printf("Comandos disponíveis:\n");
-    printf("g - Gravar o jogo atual no ficheiro\n");
-    printf("l - Ler o estado do jogo num ficheiro\n");
-    printf("b letra nr - Pintar de branco\n");
-    printf("r letra nr - Riscar\n");
-    printf("v - Verificar restrições\n");
-    printf("a - Aplicar inferências\n");
-    printf("A - Repetir inferências até não haver mudanças\n");
-    printf("R - Resolver o jogo\n");
-    printf("d - Desfazer última ação\n");
-    printf("s - Sair\n");
-}
-
-// Função auxiliar: verifica se posição é válida
-static bool dentro(int i, int j, int L, int C) {
-    return i >= 0 && i < L && j >= 0 && j < C;
-}
-
-void verificar_conectividade(char tabuleiro[26][1000], int L, int C) {
-    bool visitada[26][1000] = {false};
-    int total_brancas = 0;
-    int start_i = -1, start_j = -1;
-
-    // Conta casas brancas (maiúsculas) e encontra uma inicial
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < C; j++) {
-            if (isupper((unsigned char)tabuleiro[i][j])) {
-                total_brancas++;
-                if (start_i < 0) {
-                    start_i = i;
-                    start_j = j;
-                }
-            }
-        }
-    }
-    if (total_brancas <= 1) {
-        // Menos de 2 casas brancas, nada a verificar
-        return;
-    }
-
-    // BFS apenas através de casas brancas (maiúsculas)
-    int *fila = malloc(sizeof(int) * L * C * 2);
-    int frente = 0, tras = 0;
-    fila[tras++] = start_i;
-    fila[tras++] = start_j;
-    int cont_visitadas = 0;
-
-    while (frente < tras) {
-        int i = fila[frente++];
-        int j = fila[frente++];
-        if (!visitada[i][j] && isupper((unsigned char)tabuleiro[i][j])) {
-            visitada[i][j] = true;
-            cont_visitadas++;
-            // Vizinhança ortogonal
-            const int di[4] = {-1, 1, 0, 0};
-            const int dj[4] = {0, 0, -1, 1};
-            for (int d = 0; d < 4; d++) {
-                int ni = i + di[d];
-                int nj = j + dj[d];
-                if (dentro(ni, nj, L, C) && !visitada[ni][nj] && isupper((unsigned char)tabuleiro[ni][nj])) {
-                    fila[tras++] = ni;
-                    fila[tras++] = nj;
-                }
-            }
-        }
-    }
-    free(fila);
-
-    // Verifica se todas as brancas foram visitadas
-    if (cont_visitadas < total_brancas) {
-        printf("Restrição violada: há casas brancas isoladas no tabuleiro.\n");
-        for (int i = 0; i < L; i++) {
-            for (int j = 0; j < C; j++) {
-                if (isupper((unsigned char)tabuleiro[i][j]) && !visitada[i][j]) {
                     char col = 'a' + j;
                     int lin = i + 1;
-                    printf("  Casa %c%d não está acessível.\n", col, lin);
+                    printf("Restrição violada: Casa %c%d não está rodeada por %d vizinhas brancas.\n",
+                           col, lin, vizinhas);
                 }
             }
         }
     }
 }
 
-// Alteração em verificar_estado para chamar a conectividade
-void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas) {
+// Verifica se há letras brancas repetidas em linhas e colunas
+void verificar_brancas(Tabuleiro *t) {
+    // Verifica por linha
+    for (int i = 0; i < t->linhas; i++) {
+        int cnt[26] = {0};
+        for (int j = 0; j < t->colunas; j++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper(c)) cnt[c - 'A']++;
+        }
+        for (int k = 0; k < 26; k++) {
+            if (cnt[k] > 1) {
+                printf("Restrição violada: Letra %c foi repetida %d vezes na linha %d.\n",
+                       'A' + k, cnt[k], i+1);
+            }
+        }
+    }
+
+    // Verifica por coluna
+    for (int j = 0; j < t->colunas; j++) {
+        int cnt[26] = {0};
+        for (int i = 0; i < t->linhas; i++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper(c)) cnt[c - 'A']++;
+        }
+        for (int k = 0; k < 26; k++) {
+            if (cnt[k] > 1) {
+                printf("Restrição violada: Letra %c foi repetida %d vezes na coluna %c.\n",
+                       'A' + k, cnt[k], 'a' + j);
+            }
+        }
+    }
+}
+
+// Verifica se todas as casas brancas estão conectadas
+bool verificar_conectividade(Tabuleiro *t) {
+    int L = t->linhas, C = t->colunas;
+    bool visitado[26][1000];
+    memset(visitado, 0, sizeof visitado);
+
+    int total_brancas = 0;
+    int comeco_i = -1, comeco_j = -1;
+
+    // Procura todas as casas brancas e seleciona uma de partida
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < C; j++) {
+            if (isupper(t->tabuleiro[i][j])) {
+                total_brancas++;
+                if (comeco_i < 0) {
+                    comeco_i = i;
+                    comeco_j = j;
+                }
+            }
+        }
+    }
+
+    if (total_brancas <= 1) return true; // Conectividade trivial
+
+    // BFS a partir da casa branca inicial
+    int fila_i[L*C], fila_j[L*C], frente = 0, atras = 0;
+    fila_i[atras] = comeco_i;
+    fila_j[atras++] = comeco_j;
+    visitado[comeco_i][comeco_j] = true;
+    int cont = 1;
+
+    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
+    while (frente < atras) {
+        int ci = fila_i[frente], cj = fila_j[frente++];
+        for (int d = 0; d < 4; d++) {
+            int ni = ci + di[d], nj = cj + dj[d];
+            if (ni >= 0 && ni < L && nj >= 0 && nj < C &&
+                isupper(t->tabuleiro[ni][nj]) && !visitado[ni][nj]) {
+                visitado[ni][nj] = true;
+                fila_i[atras] = ni;
+                fila_j[atras++] = nj;
+                cont++;
+            }
+        }
+    }
+
+    // Se todas as casas brancas foram visitadas, estão conectadas
+    return cont == total_brancas;
+}
+
+// Função principal que junta todas as verificações de regras
+void verificar_estado(Tabuleiro *t) {
     printf("Verificando restrições...\n");
-    verificar_riscadas(tabuleiro, linhas, colunas);
-    verificar_brancas(tabuleiro, linhas, colunas);
-    verificar_conectividade(tabuleiro, linhas, colunas);  // Etapa 3
+    verificar_riscadas(t);         // Verifica casas riscadas
+    verificar_brancas(t);          // Verifica repetições de letras
+    if (!verificar_conectividade(t)) {
+        printf("Restrição violada: há casas brancas isoladas no tabuleiro.\n");
+    }
     printf("Verificação concluída.\n");
 }
 
+
 // Função auxiliar de conectividade usada pela Regra 3 permanece igual...
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
+    // 1) Faz a cópia e aplica o risco
     Tabuleiro tmp = *orig;
     tmp.tabuleiro[ri][rj] = '#';
-    bool visitada[26][1000] = {false};
-    int total = 0, start_i = -1, start_j = -1;
-    for (int i = 0; i < tmp.linhas; i++)
-        for (int j = 0; j < tmp.colunas; j++)
-            if (tmp.tabuleiro[i][j] != '#') {
-                total++;
-                if (start_i < 0) { start_i = i; start_j = j; }
-            }
-    if (total == 0) return true;
 
-    int fila[26*1000][2];
-    int f = 0, r = 0, cont = 0;
-    fila[r][0] = start_i; fila[r][1] = start_j; r++;
-    const int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
-    while (f < r) {
-        int i = fila[f][0], j = fila[f][1]; f++;
-        if (!visitada[i][j] && tmp.tabuleiro[i][j] != '#') {
-            visitada[i][j] = true; cont++;
-            for (int d = 0; d < 4; d++) {
-                int ni = i + di[d], nj = j + dj[d];
-                if (ni >= 0 && ni < tmp.linhas && nj >= 0 && nj < tmp.colunas
-                    && !visitada[ni][nj] && tmp.tabuleiro[ni][nj] != '#') {
-                    fila[r][0] = ni; fila[r][1] = nj; r++;
-                }
+    // 2) Inicializa visitada
+    bool visitada[26][1000];
+    memset(visitada, 0, sizeof visitada);
+
+    // 3) Conta apenas as casas brancas (maiúsculas) e escolhe ponto de partida
+    int total = 0, start_i = -1, start_j = -1;
+    for (int i = 0; i < tmp.linhas; i++) {
+      for (int j = 0; j < tmp.colunas; j++) {
+        if (isupper((char)tmp.tabuleiro[i][j])) {
+          total++;
+          if (start_i < 0) {
+            start_i = i; start_j = j;
+          }
+        }
+      }
+    }
+
+    // Se não houver ou houver só uma branca, conectividade é trivial
+    if (total <= 1) return true;
+
+    // 4) BFS só sobre as casas brancas
+    int maxq = tmp.linhas * tmp.colunas;
+    int fila_i[maxq], fila_j[maxq];
+    int front = 0, back = 0;
+    fila_i[back] = start_i;
+    fila_j[back++] = start_j;
+    visitada[start_i][start_j] = true;
+    int cont = 1;
+
+    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
+    while (front < back) {
+        int ci = fila_i[front], cj = fila_j[front++];
+        for (int d = 0; d < 4; d++) {
+            int ni = ci + di[d], nj = cj + dj[d];
+            if (ni >= 0 && ni < tmp.linhas && nj >= 0 && nj < tmp.colunas
+             && isupper((char)tmp.tabuleiro[ni][nj])
+             && !visitada[ni][nj]) {
+                visitada[ni][nj] = true;
+                fila_i[back] = ni;
+                fila_j[back++] = nj;
+                cont++;
             }
         }
     }
+
+    // 5) Só devolve true se visitou todas as brancas
     return cont == total;
 }
+
 
 // Aplica uma única vez as três regras de inferência (comando 'a'), usando sempre o tabuleiro original
 void aplicar_correcoes(Tabuleiro *t) {
@@ -477,19 +476,44 @@ void aplicar_correcoes(Tabuleiro *t) {
     }
 
     // Regra 3: evitar isolamento de brancas — usar conexão completa simulada
-    for (int i = 0; i < orig.linhas; i++) {
-        for (int j = 0; j < orig.colunas; j++) {
-            if (islower((unsigned char)orig.tabuleiro[i][j])) {
-                if (!conexao_valida_apos_risco(&orig, i, j)) {
-                    char mai = toupper((unsigned char)orig.tabuleiro[i][j]);
-                    if (novo[i][j] != mai) {
-                        novo[i][j] = mai; alteracoes++;
+// Regra 3 corrigida: evitar isolamento E repetições
+for (int i = 0; i < orig.linhas; i++) {
+    for (int j = 0; j < orig.colunas; j++) {
+        if (islower((unsigned char)orig.tabuleiro[i][j])) {
+            // Verifica se riscar isolaria as brancas
+            if (!conexao_valida_apos_risco(&orig, i, j)) {
+                char mai = toupper((unsigned char)orig.tabuleiro[i][j]);
+                
+                // Verifica se a conversão para maiúscula é segura
+                bool pode_pintar = true;
+                
+                // Verifica repetição na linha
+                for (int x = 0; x < orig.colunas; x++) {
+                    if (x != j && isupper(novo[i][x]) && novo[i][x] == mai) {
+                        pode_pintar = false;
+                        break;
                     }
+                }
+                
+                // Verifica repetição na coluna
+                if (pode_pintar) {
+                    for (int y = 0; y < orig.linhas; y++) {
+                        if (y != i && isupper(novo[y][j]) && novo[y][j] == mai) {
+                            pode_pintar = false;
+                            break;
+                        }
+                    }
+                }
+                
+                // Aplica apenas se não houver repetições
+                if (pode_pintar && novo[i][j] != mai) {
+                    novo[i][j] = mai;
+                    alteracoes++;
                 }
             }
         }
     }
-
+}
     // Copia 'novo' para o tabuleiro
     for (int i = 0; i < orig.linhas; i++)
         for (int j = 0; j < orig.colunas; j++)
@@ -498,57 +522,163 @@ void aplicar_correcoes(Tabuleiro *t) {
     printf("Alterações aplicadas: %d\n", alteracoes);
 }
 
-int resolve_jogo(Tabuleiro *t) {
-    int alterado;
-    int total_mudou = 0;
+bool busca_solucao(Tabuleiro *t) {
 
-    do {
-        alterado = 0;
+    if (violacao_basica(t)) return false;
 
+    if (completo(t)) {
+        return verificar_conectividade(t); // Conectividade só no final
+    }
+
+    // 4) Escolha da célula
+    int bi = -1, bj = -1;
+    for (int i = 0; i < t->linhas && bi < 0; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (islower((char)t->tabuleiro[i][j])) {
+                bi = i; bj = j; break;
+            }
+        }
+    }
+
+    // 5) Tenta pintar de branco
+    {
+        Tabuleiro copia = copia_tabuleiro(t);
+        copia.tabuleiro[bi][bj] = toupper((char)copia.tabuleiro[bi][bj]);
+        if (busca_solucao(&copia)) {
+            *t = copia;
+            return true;
+        }
+    }
+
+    // 6) Tenta riscar
+    {
+        Tabuleiro copia = copia_tabuleiro(t);
+        copia.tabuleiro[bi][bj] = '#';
+        if (!violacao_basica(&copia)) { // Só continua se não houver '#' adjacentes
+            if (busca_solucao(&copia)) {
+                *t = copia;
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void comando_R(Tabuleiro *t) {
+    Tabuleiro backup = copia_tabuleiro(t);
+
+    if (!busca_solucao(t)) {
+        printf("Não foi possível resolver o tabuleiro.\n");
+        *t = backup;
+        return;
+    }
+
+    printf("Solução encontrada:\n");
+    imprimirTabuleiro(t->tabuleiro, t->linhas, t->colunas);
+}
+
+Tabuleiro copia_tabuleiro(Tabuleiro *t) {
+    Tabuleiro c;
+    c.linhas = t->linhas;
+    c.colunas = t->colunas;
+    for (int i = 0; i < t->linhas; i++) {
+        memcpy(c.tabuleiro[i], t->tabuleiro[i], t->colunas);
+    }
+    return c;
+}
+
+// Verifica se há alguma violação das regras básicas do jogo
+bool violacao_basica(Tabuleiro *t) {
+    // 1a) Verificar repetições de letras brancas (maiúsculas) nas linhas
+    for (int i = 0; i < t->linhas; i++) {
+        int cnt[26] = {0}; // Contador de letras A-Z
+        for (int j = 0; j < t->colunas; j++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper((char)c)) { // Se for uma letra maiúscula
+                if (++cnt[c - 'A'] > 1) return true; // Letra repetida → violação
+            }
+        }
+    }
+
+    // 1b) Verificar repetições de letras brancas (maiúsculas) nas colunas
+    for (int j = 0; j < t->colunas; j++) {
+        int cnt[26] = {0}; // Contador de letras A-Z
         for (int i = 0; i < t->linhas; i++) {
-            for (int j = 0; j < t->colunas; j++) {
-                char atual = t->tabuleiro[i][j];
+            char c = t->tabuleiro[i][j];
+            if (isupper((char)c)) {
+                if (++cnt[c - 'A'] > 1) return true; // Letra repetida → violação
+            }
+        }
+    }
 
-                // Regra 1: riscar repetidos de brancas (considerando maiúsculas e suas versões minúsculas)
-                if (isupper((unsigned char)atual)) {
-                    for (int k = 0; k < t->colunas; k++) {
-                        if (k != j && (t->tabuleiro[i][k] == atual || t->tabuleiro[i][k] == tolower(atual))) {
-                            t->tabuleiro[i][k] = '#';
-                            alterado = 1;
-                        }
-                    }
-                    for (int k = 0; k < t->linhas; k++) {
-                        if (k != i && (t->tabuleiro[k][j] == atual || t->tabuleiro[k][j] == tolower(atual))) {
-                            t->tabuleiro[k][j] = '#';
-                            alterado = 1;
+    // 1c) Verificar se cada célula riscada '#' tem pelo menos um vizinho branco
+    int di[] = {-1, 1, 0, 0}; // deslocamentos para cima, baixo, esquerda, direita
+    int dj[] = {0, 0, -1, 1};
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (t->tabuleiro[i][j] == '#') {
+                bool tem_branco = false; // Flag para saber se há vizinho branco
+                for (int d = 0; d < 4; d++) {
+                    int ni = i + di[d];
+                    int nj = j + dj[d];
+                    // Verifica se a posição vizinha está dentro dos limites do tabuleiro
+                    if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
+                        // Se há uma casa branca vizinha
+                        if (isupper((char)t->tabuleiro[ni][nj])) {
+                            tem_branco = true;
+                            break;
                         }
                     }
                 }
+                if (!tem_branco) return true; // '#' isolado → violação
+            }
+        }
+    }
 
-                // Regra 2: vizinhos de # viram brancos
-                if (t->tabuleiro[i][j] == '#') {
-                    alterado |= pintar_vizinhos_de_branco(t, i, j);
-                }
-
-                // Regra 3: se riscar isolaria, pintar de branco
-                if (islower((unsigned char)atual)) {
-                    int pode_riscar = 0;
-                    if (i > 0 && isupper((unsigned char)t->tabuleiro[i - 1][j])) pode_riscar = 1;
-                    if (i < t->linhas - 1 && isupper((unsigned char)t->tabuleiro[i + 1][j])) pode_riscar = 1;
-                    if (j > 0 && isupper((unsigned char)t->tabuleiro[i][j - 1])) pode_riscar = 1;
-                    if (j < t->colunas - 1 && isupper((unsigned char)t->tabuleiro[i][j + 1])) pode_riscar = 1;
-
-                    if (!pode_riscar) {
-                        t->tabuleiro[i][j] = toupper((unsigned char)atual);
-                        alterado = 1;
+    // 1d) Verificar se existem dois '#' adjacentes (não permitido)
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (t->tabuleiro[i][j] == '#') {
+                for (int d = 0; d < 4; d++) {
+                    int ni = i + di[d], nj = j + dj[d];
+                    // Verifica se a posição vizinha está dentro do tabuleiro
+                    if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
+                        if (t->tabuleiro[ni][nj] == '#') {
+                            return true; // Dois '#' adjacentes → violação
+                        }
                     }
                 }
             }
         }
+    }
 
-        if (alterado) total_mudou = 1;
+    // Nenhuma violação encontrada
+    return false;
+}
 
-    } while (alterado);
+// 2) Testa se o tabuleiro está completo (não há minúsculas)
+bool completo(Tabuleiro *t) {
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (islower((unsigned char)t->tabuleiro[i][j]))
+                return false;
+        }
+    }
+    return true;
+}
 
-    return total_mudou;
+// Funções de interface
+void imprimir_comandos() {
+    printf("Comandos disponíveis:\n");
+    printf("g - Gravar o jogo atual no ficheiro\n");
+    printf("l - Ler o estado do jogo num ficheiro\n");
+    printf("b letra nr - Pintar de branco\n");
+    printf("r letra nr - Riscar\n");
+    printf("v - Verificar restrições\n");
+    printf("a - Aplicar inferências\n");
+    printf("A - Repetir inferências até não haver mudanças\n");
+    printf("R - Resolver o jogo\n");
+    printf("d - Desfazer última ação\n");
+    printf("s - Sair\n");
 }

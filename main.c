@@ -55,7 +55,7 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         } 
         else if (strcmp(comando, "v") == 0) {
-            verificar_estado(t.tabuleiro, t.linhas, t.colunas);
+            verificar_estado(&t);
         }
         else if (strcmp(comando, "a") == 0) {
             guardar_estado(&t); // Guarda o estado do jogo antes de aplicar as correções
@@ -63,16 +63,8 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "R") == 0) {
-            guardar_estado(&t); // Guarda o estado atual do jogo antes de resolver
-            int resolvido = resolve_jogo(&t); // resolve_jogo devolve 1 se forem feitas alterações, caso contrário devolve 0
-            
-            if (resolvido) {
-                printf("Solução encontrada:\n");
-            } else {
-                printf("O tabuleiro já está resolvido ou não foi possível alterar.\n");
-            }
-            
-            imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+            guardar_estado(&t);
+            comando_R(&t);
         }
         else if (strcmp(comando, "A") == 0) {
             guardar_estado(&t); // Guarda o estado inicial

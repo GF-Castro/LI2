@@ -22,7 +22,6 @@ void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y);
 int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j);
 void aplicar_correcoes(Tabuleiro *t);
 int resolve_jogo(Tabuleiro *t);
-void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas);
 void lerJogo(char *nome, Tabuleiro *t);
 void gravarJogo(char *nome, Tabuleiro *t);
 void guardar_estado(Tabuleiro *t);
@@ -32,11 +31,19 @@ Tabuleiro desempilhar();
 void stacks(Tabuleiro estado);
 void gravarStack(char *nome);
 void lerStack(char *nome);
-void verificar_riscadas(char tabuleiro[26][1000], int linhas, int colunas);
-void verificar_brancas(char tabuleiro[26][1000], int linhas, int colunas);
-void verificar_conectividade(char tabuleiro[26][1000], int linhas, int colunas);
-void verificar_estado(char tabuleiro[26][1000], int linhas, int colunas);
+void verificar_riscadas(Tabuleiro *t);
+void verificar_brancas(Tabuleiro *t);
+bool verificar_conectividade(Tabuleiro *t);
+void verificar_estado(Tabuleiro *t);
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
+int inferencia_inicial(Tabuleiro *t);
+bool busca_solucao(Tabuleiro *t);
+Tabuleiro copia_tabuleiro(Tabuleiro *t) ;
+bool violacao_basica(Tabuleiro *t);
+bool completo(Tabuleiro *t);
+void comando_R(Tabuleiro *t); 
+
+
 
 #endif
 
