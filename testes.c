@@ -200,25 +200,27 @@ void teste_gerenciamento_estado() {
 
 // Teste para as funções de verificação de regras
 void teste_verificacao_regras() {
-    char tabuleiro_valido[26][1000] = {{0}};
-    char tabuleiro_invalido[26][1000] = {{0}};
     
+    Tabuleiro tabuleiro_valido = {{{0}}, 3, 3};
+    Tabuleiro tabuleiro_invalido = {{{0}}, 3, 3};
+
+
     // Preencher com dados de teste
-    tabuleiro_valido[0][0] = 'A'; tabuleiro_valido[0][1] = '#'; tabuleiro_valido[0][2] = 'B';
-    tabuleiro_valido[1][0] = '#'; tabuleiro_valido[1][1] = 'C'; tabuleiro_valido[1][2] = '#';
-    tabuleiro_valido[2][0] = 'D'; tabuleiro_valido[2][1] = '#'; tabuleiro_valido[2][2] = 'E';
+    tabuleiro_valido.tabuleiro[0][0] = 'A'; tabuleiro_valido.tabuleiro[0][1] = '#'; tabuleiro_valido.tabuleiro[0][2] = 'B';
+    tabuleiro_valido.tabuleiro[1][0] = '#'; tabuleiro_valido.tabuleiro[1][1] = 'C'; tabuleiro_valido.tabuleiro[1][2] = '#';
+    tabuleiro_valido.tabuleiro[2][0] = 'D'; tabuleiro_valido.tabuleiro[2][1] = '#'; tabuleiro_valido.tabuleiro[2][2] = 'E';
     
-    tabuleiro_invalido[0][0] = 'A'; tabuleiro_invalido[0][1] = '#'; tabuleiro_invalido[0][2] = 'A';
-    tabuleiro_invalido[1][0] = '#'; tabuleiro_invalido[1][1] = 'B'; tabuleiro_invalido[1][2] = '#';
-    tabuleiro_invalido[2][0] = 'C'; tabuleiro_invalido[2][1] = '#'; tabuleiro_invalido[2][2] = 'B';
+    tabuleiro_invalido.tabuleiro[0][0] = 'A'; tabuleiro_invalido.tabuleiro[0][1] = '#'; tabuleiro_invalido.tabuleiro[0][2] = 'A';
+    tabuleiro_invalido.tabuleiro[1][0] = '#'; tabuleiro_invalido.tabuleiro[1][1] = 'B'; tabuleiro_invalido.tabuleiro[1][2] = '#';
+    tabuleiro_invalido.tabuleiro[2][0] = 'C'; tabuleiro_invalido.tabuleiro[2][1] = '#'; tabuleiro_invalido.tabuleiro[2][2] = 'B';
     
     // Testes
-    verificar_riscadas(tabuleiro_valido, 3, 3);
-    verificar_brancas(tabuleiro_valido, 3, 3);
-    verificar_riscadas(tabuleiro_invalido, 3, 3);
-    verificar_brancas(tabuleiro_invalido, 3, 3);
-    verificar_estado(tabuleiro_valido, 3, 3);
-    verificar_estado(tabuleiro_invalido, 3, 3);
+    verificar_riscadas(&tabuleiro_valido);
+    verificar_brancas(&tabuleiro_valido);
+    verificar_riscadas(&tabuleiro_invalido);
+    verificar_brancas(&tabuleiro_invalido);
+    verificar_estado(&tabuleiro_valido);
+    verificar_estado(&tabuleiro_invalido);
 }
 
 // Teste para as funções de gravação e leitura de arquivo
@@ -303,35 +305,35 @@ void teste_lerStack_linha_incompleta() {
 }
 
 void teste_verificar_riscadas_borda() {
-    char tab[26][1000] = {{0}};
-    tab[0][0] = '#';
-    tab[1][0] = 'A';
-    tab[0][1] = 'B';
-    verificar_riscadas(tab, 2, 2);
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 2, .colunas = 2 };
+    t.tabuleiro[0][0] = '#';
+    t.tabuleiro[1][0] = 'A';
+    t.tabuleiro[0][1] = 'B';
+    verificar_riscadas(&t);
     CU_PASS("verificar_riscadas borda coberto");
 }
 
 void teste_verificar_riscadas_interior() {
-    char tab[26][1000] = {{0}};
-    tab[1][1] = '#';
-    verificar_riscadas(tab, 3, 3);
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
+    t.tabuleiro[1][1] = '#';
+    verificar_riscadas(&t);
     CU_PASS("verificar_riscadas interior coberto");
 }
 
 void teste_verificar_brancas_coluna() {
-    char tab[26][1000] = {{0}};
-    tab[0][0] = 'C';
-    tab[1][0] = 'C';
-    tab[2][0] = 'C';
-    verificar_brancas(tab, 3, 2);
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 1 };
+    t.tabuleiro[0][0] = 'C';
+    t.tabuleiro[1][0] = 'C';
+    t.tabuleiro[2][0] = 'C';
+    verificar_brancas(&t);
     CU_PASS("verificar_brancas coluna coberto");
 }
 
 void teste_verificar_brancas_coluna_dupla() {
-    char tab[26][1000] = {{0}};
-    tab[0][1] = 'D';
-    tab[1][1] = 'D';
-    verificar_brancas(tab, 2, 2);
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 2, .colunas = 2 };
+    t.tabuleiro[0][1] = 'D';
+    t.tabuleiro[1][1] = 'D';
+    verificar_brancas(&t);
     CU_PASS("verificar_brancas coluna dupla coberto");
 }
 
@@ -345,46 +347,36 @@ void teste_lerJogo_header_malformado() {
     CU_PASS("lerJogo header malformado coberto");
 }
 
-
-
-// Novo teste para aplicar correções (Regras 1, 2, 3)
 void teste_aplicar_correcoes() {
-    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
     strcpy(t.tabuleiro[0], "aAB");
     strcpy(t.tabuleiro[1], "#cD");
     strcpy(t.tabuleiro[2], "efG");
     
     aplicar_correcoes(&t);
     
-    // Regra 1: 'a' na linha 0 deve ser riscado por causa de 'A'
     CU_ASSERT_EQUAL(t.tabuleiro[0][0], '#');
-    // Regra 2: vizinhos de '#' (posição 1,0) devem ser maiúsculos
-    CU_ASSERT_EQUAL(t.tabuleiro[0][0], '#');
-    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C'); // 'c' convertido para 'C'
-    // Regra 3: 'e' não pode ser riscado para não isolar
+    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
     CU_ASSERT_EQUAL(t.tabuleiro[2][0], 'E');
 }
 
-// Teste para a função resolve_jogo
 void teste_resolve_jogo() {
-    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
     strcpy(t.tabuleiro[0], "abc");
     strcpy(t.tabuleiro[1], "def");
     strcpy(t.tabuleiro[2], "ghi");
     
-    // Aplicar resolução
-    int mudou = resolve_jogo(&t);
-    CU_ASSERT_EQUAL(mudou, 1);
-    // Verificar se alguma célula foi alterada
-        CU_ASSERT_TRUE(isupper(t.tabuleiro[0][0]) || t.tabuleiro[0][0] == '#');
+        comando_R(&t);
+    int mudou = (isupper(t.tabuleiro[0][0]) || t.tabuleiro[0][0] == '#');
+    CU_ASSERT_TRUE(mudou);
 }
 
-// Teste para verificar conectividade com células isoladas
 void teste_verificar_conectividade_isoladas() {
-    char tab[26][1000] = {{0}};
-    tab[0][0] = 'A';
-    tab[2][2] = 'B'; // Isolada de 'A'
-    verificar_conectividade(tab, 3, 3);
+    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
+    t.tabuleiro[0][0] = 'A';
+    t.tabuleiro[2][2] = 'B';
+    verificar_conectividade(&t);
+    CU_PASS("verificar_conectividade isoladas coberto");
 }
 
 // Teste para formatoParaCoordenadas com input NULL
