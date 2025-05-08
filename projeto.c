@@ -371,7 +371,7 @@ void verificar_estado(Tabuleiro *t) {
 }
 
 
-// Função auxiliar de conectividade usada pela Regra 3 permanece igual...
+// Função auxiliar de conectividade
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
     // 1) Faz a cópia e aplica o risco
     Tabuleiro tmp = *orig;
@@ -382,13 +382,13 @@ bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
     memset(visitada, 0, sizeof visitada);
 
     // 3) Conta apenas as casas brancas (maiúsculas) e escolhe ponto de partida
-    int total = 0, start_i = -1, start_j = -1;
+    int total = 0, comeco_i = -1, comeco_j = -1;
     for (int i = 0; i < tmp.linhas; i++) {
       for (int j = 0; j < tmp.colunas; j++) {
         if (isupper((char)tmp.tabuleiro[i][j])) {
           total++;
-          if (start_i < 0) {
-            start_i = i; start_j = j;
+          if (comeco_i < 0) {
+            comeco_i = i; comeco_j = j;
           }
         }
       }
@@ -400,23 +400,23 @@ bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
     // 4) BFS só sobre as casas brancas
     int maxq = tmp.linhas * tmp.colunas;
     int fila_i[maxq], fila_j[maxq];
-    int front = 0, back = 0;
-    fila_i[back] = start_i;
-    fila_j[back++] = start_j;
-    visitada[start_i][start_j] = true;
+    int frente = 0, atras = 0;
+    fila_i[atras] = comeco_i;
+    fila_j[atras++] = comeco_j;
+    visitada[comeco_i][comeco_j] = true;
     int cont = 1;
 
     int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
-    while (front < back) {
-        int ci = fila_i[front], cj = fila_j[front++];
+    while (frente < atras) {
+        int ci = fila_i[frente], cj = fila_j[frente++];
         for (int d = 0; d < 4; d++) {
             int ni = ci + di[d], nj = cj + dj[d];
             if (ni >= 0 && ni < tmp.linhas && nj >= 0 && nj < tmp.colunas
              && isupper((char)tmp.tabuleiro[ni][nj])
              && !visitada[ni][nj]) {
                 visitada[ni][nj] = true;
-                fila_i[back] = ni;
-                fila_j[back++] = nj;
+                fila_i[atras] = ni;
+                fila_j[atras++] = nj;
                 cont++;
             }
         }
@@ -441,7 +441,7 @@ void aplicar_correcoes(Tabuleiro *t) {
     // Regra 1: riscar em 'novo' minúsculas de cada branca em 'orig'
     for (int i = 0; i < orig.linhas; i++) {
         for (int j = 0; j < orig.colunas; j++) {
-            if (isupper((unsigned char)orig.tabuleiro[i][j])) {
+            if (isupper((char)orig.tabuleiro[i][j])) {
                 char c = tolower(orig.tabuleiro[i][j]);
                 for (int col = 0; col < orig.colunas; col++) {
                     if (orig.tabuleiro[i][col] == c && novo[i][col] != '#') {
@@ -465,9 +465,9 @@ void aplicar_correcoes(Tabuleiro *t) {
                 for (int d = 0; d < 4; d++) {
                     int ni = i + di[d], nj = j + dj[d];
                     if (ni >= 0 && ni < orig.linhas && nj >= 0 && nj < orig.colunas
-                        && islower((unsigned char)orig.tabuleiro[ni][nj])
-                        && novo[ni][nj] != toupper((unsigned char)orig.tabuleiro[ni][nj])) {
-                        novo[ni][nj] = toupper((unsigned char)orig.tabuleiro[ni][nj]);
+                        && islower(( char)orig.tabuleiro[ni][nj])
+                        && novo[ni][nj] != toupper((char)orig.tabuleiro[ni][nj])) {
+                        novo[ni][nj] = toupper(( char)orig.tabuleiro[ni][nj]);
                         alteracoes++;
                     }
                 }
@@ -479,10 +479,10 @@ void aplicar_correcoes(Tabuleiro *t) {
 // Regra 3 corrigida: evitar isolamento E repetições
 for (int i = 0; i < orig.linhas; i++) {
     for (int j = 0; j < orig.colunas; j++) {
-        if (islower((unsigned char)orig.tabuleiro[i][j])) {
+        if (islower((char)orig.tabuleiro[i][j])) {
             // Verifica se riscar isolaria as brancas
             if (!conexao_valida_apos_risco(&orig, i, j)) {
-                char mai = toupper((unsigned char)orig.tabuleiro[i][j]);
+                char mai = toupper((char)orig.tabuleiro[i][j]);
                 
                 // Verifica se a conversão para maiúscula é segura
                 bool pode_pintar = true;
