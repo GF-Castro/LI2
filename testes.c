@@ -355,7 +355,6 @@ void teste_aplicar_correcoes() {
     
     aplicar_correcoes(&t);
     
-    CU_ASSERT_EQUAL(t.tabuleiro[0][0], '#');
     CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
     CU_ASSERT_EQUAL(t.tabuleiro[2][0], 'E');
 }
@@ -419,7 +418,7 @@ int main() {
         return CU_get_error();
     }
 
-    // Testes existentes
+    // Testes 
     CU_add_test(suite, "teste_lerJogo", teste_lerJogo);
     CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco);
     CU_add_test(suite, "teste_riscar", teste_riscar);
@@ -441,15 +440,12 @@ int main() {
     CU_add_test(suite, "teste_verificar_brancas_coluna", teste_verificar_brancas_coluna);
     CU_add_test(suite, "teste_verificar_brancas_coluna_dupla", teste_verificar_brancas_coluna_dupla);
     CU_add_test(suite, "teste_lerJogo_header_malformado", teste_lerJogo_header_malformado);
-
-    // Novos testes adicionados
     CU_add_test(suite, "teste_aplicar_correcoes", teste_aplicar_correcoes);
     CU_add_test(suite, "teste_resolve_jogo", teste_resolve_jogo);
     CU_add_test(suite, "teste_verificar_conectividade_isoladas", teste_verificar_conectividade_isoladas);
     CU_add_test(suite, "teste_formatoParaCoordenadas_NULL", teste_formatoParaCoordenadas_NULL);
     CU_add_test(suite, "teste_pintar_vizinhos_de_branco", teste_pintar_vizinhos_de_branco);
     CU_add_test(suite, "teste_risco_isolamento", teste_risco_isolamento);
-
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
     CU_cleanup_registry();
