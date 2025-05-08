@@ -8,7 +8,7 @@ TEST = testes.c projeto.c
 HDRS = projeto.h
 
 # Def 'all'
-all: test gcov comp run 
+all: test gcov compProj compMain run 
 
 # Comandos main
 main:
@@ -43,7 +43,12 @@ rebuild:
 	make clean
 	make all
 
-# pmccabe 
-comp: 
+# pmccabe projeto.c
+compProj: 
 	@echo "CompC   STMTS   LINHAS  INICIO  FIM     FUNC " 
 	@pmccabe projeto.c 
+
+# pmccabe main.c
+compMain: 
+	@echo "CompC   STMTS   LINHAS  INICIO  FIM     FUNC " 
+	@pmccabe main.c 
