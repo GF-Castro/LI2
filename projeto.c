@@ -458,7 +458,7 @@ void aplicar_correcoes(Tabuleiro *t) {
     }
 
     // Regra 2: pintar vizinhos de '#' em 'orig'
-    const int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
+    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
     for (int i = 0; i < orig.linhas; i++) {
         for (int j = 0; j < orig.colunas; j++) {
             if (orig.tabuleiro[i][j] == '#') {
@@ -661,7 +661,7 @@ bool violacao_basica(Tabuleiro *t) {
 bool completo(Tabuleiro *t) {
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
-            if (islower((unsigned char)t->tabuleiro[i][j]))
+            if (islower((char)t->tabuleiro[i][j]))
                 return false;
         }
     }
