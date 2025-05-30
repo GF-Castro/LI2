@@ -11,8 +11,15 @@ typedef struct {
     char **tabuleiro;
 } Tabuleiro;
 
-// Declaração de variáveis globais, usei extern para evitar duplicação, basicamente só diz que a variável existe em noutro arquivo (projeto.c)
-extern Tabuleiro stack[tamanhoStack];
+typedef struct {
+    char action; // 'r' (riscar), 'b' (pintar)
+    int x, y;    // coluna, linha
+    char prev_val;
+    char new_val;
+} Move;
+
+// Declaração de variáveis globais, usei extern para evitar duplicação
+extern Move movestack[tamanhoStack];
 extern int topoStack;
 
 // Declaração de funções
@@ -26,11 +33,11 @@ void aplicar_correcoes(Tabuleiro *t);
 int resolve_jogo(Tabuleiro *t);
 void lerJogo(char *nome, Tabuleiro *t);
 void gravarJogo(char *nome, Tabuleiro *t);
-void guardar_estado(Tabuleiro *t);
+void guardar_move(char action, int x, int y, char prev_val, char new_val);
 void desfazer(Tabuleiro *t);
 int formatoParaCoordenadas(char *input, int *x, int *y);
-Tabuleiro desempilhar();
-void stacks(Tabuleiro estado);
+Move desempilhar();
+void stacks(Move movimento);
 void gravarStack(char *nome);
 void lerStack(char *nome);
 void verificar_riscadas(Tabuleiro *t);
@@ -39,7 +46,7 @@ void verificar_estado(Tabuleiro *t);
 bool e_possivel_resolver (Tabuleiro *t);
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
 int inferencia_inicial(Tabuleiro *t);
-Tabuleiro copia_tabuleiro(Tabuleiro *t) ;
+Tabuleiro copia_tabuleiro(Tabuleiro *t);
 bool violacao_basica(Tabuleiro *t);
 bool completo(Tabuleiro *t);
 void comando_R(Tabuleiro *t); 

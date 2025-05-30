@@ -6,24 +6,17 @@
 #include <stdbool.h>
 
 // Declaração do array de estados e topo da stack
-Tabuleiro stack[tamanhoStack];  // Guarda os estados anteriores do tabuleiro
+Move movestack[tamanhoStack];  // Guarda os estados anteriores do tabuleiro
 int topoStack = -1;             // Índice do topo da stack (inicialmente vazio)
 
 int formatoParaCoordenadas(char *input, int *x, int *y) {
     if (input == NULL || strlen(input) < 2) return 0;
-
     if (!isalpha(input[0])) return 0;
-
-    // Converte letra para índice de linha, aceita maiúsculas e minúsculas
     *x = tolower(input[0]) - 'a';
-
-    // Verifica se o resto é só número (sem caracteres extras)
     char *ponteirofim;
     long numero = strtol(input + 1, &ponteirofim, 10);
-
-    if (*ponteirofim != '\0') return 0;  // Há caracteres a mais após o número
-    if (numero < 1) return 0;       // Número deve ser positivo
-
+    if (*ponteirofim != '\0') return 0;
+    if (numero < 1) return 0;
     *y = (int)numero - 1;
     return 1;
 }
@@ -39,7 +32,10 @@ void imprimirTabuleiro(char **tabuleiro, int linhas, int colunas) {
 
 void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        tabuleiro[y][x] = toupper(tabuleiro[y][x]);
+        char prev = tabuleiro[y][x];
+        char next = toupper(tabuleiro[y][x]);
+        guardar_move('b', x, y, prev, next);
+        tabuleiro[y][x] = next;
     } else {
         printf("Coordenada fora dos limites.\n");
     }
@@ -47,11 +43,10 @@ void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
 
 void riscar(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        if (tabuleiro[y][x] != '\0') {
-            tabuleiro[y][x] = '#';
-        } else {
-            printf("Célula vazia, não pode ser riscada.\n");
-        }
+        char prev = tabuleiro[y][x];
+        char next = '#';
+        guardar_move('r', x, y, prev, next);
+        tabuleiro[y][x] = next;
     } else {
         printf("Coordenada fora dos limites.\n");
     }
@@ -79,81 +74,63 @@ int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
     return alterado;
 }
 
-// Função que empilha um estado do tabuleiro
-void stacks(Tabuleiro estado) {
-    if (topoStack < tamanhoStack - 1) {      // Verifica se há espaço na stack
-        topoStack++;                         // Avança o topo
-        stack[topoStack] = estado;           // Guarda o novo estado
+// Função para empilhar um movimento (já existe guardar_move, mas podes ter stacks para compatibilidade)
+void stacks(Move movimento) {
+    if (topoStack < tamanhoStack - 1) {
+        topoStack++;
+        movestack[topoStack] = movimento;
     } else {
-        printf("Stack cheia. Não é possível guardar mais estados.\n");
+        printf("Stack cheia. Não é possível guardar mais movimentos.\n");
     }
 }
 
-Tabuleiro desempilhar() {
+// Função para desempilhar um movimento
+Move desempilhar() {
     if (topoStack >= 0) {
-        Tabuleiro anterior = stack[topoStack];
+        Move anterior = movestack[topoStack];
         topoStack--;
         return anterior;
     } else {
         printf("Stack vazia.\n");
-        Tabuleiro vazio;
-        vazio.tabuleiro = NULL;
-        vazio.linhas = 0;
-        vazio.colunas = 0;
+        Move vazio = {'\0', -1, -1, '\0', '\0'};
         return vazio;
     }
 }
 
-// Guarda cópia profunda do estado atual do tabuleiro
-void guardar_estado(Tabuleiro *t) {
+void guardar_move(char action, int x, int y, char prev_val, char new_val) {
     if (topoStack < tamanhoStack - 1) {
         topoStack++;
-        stack[topoStack] = copia_tabuleiro(t);
+        movestack[topoStack].action = action;
+        movestack[topoStack].x = x;
+        movestack[topoStack].y = y;
+        movestack[topoStack].prev_val = prev_val;
+        movestack[topoStack].new_val = new_val;
     } else {
-        printf("Stack cheia. Não é possível guardar mais estados.\n");
+        printf("Stack cheia. Não é possível guardar mais movimentos.\n");
     }
 }
 
-// Desfaz a última jogada: liberta o tabuleiro atual e substitui pelo anterior
 void desfazer(Tabuleiro *t) {
     if (topoStack < 0) {
-        printf("Não é possível desfazer mais ações.\n");
+        printf("Nada para desfazer.\n");
         return;
     }
-    // Liberta o tabuleiro atual
-    libertar_tabuleiro(t);
-
-    // Recupera o estado anterior (deep copy)
-    Tabuleiro anterior = desempilhar();
-
-    // Copia os valores para o tabuleiro atual
-    t->linhas = anterior.linhas;
-    t->colunas = anterior.colunas;
-    t->tabuleiro = anterior.tabuleiro; // transfere ownership do ponteiro
-    // (não libertar anterior.tabuleiro aqui! já transferido)
+    Move m = movestack[topoStack--];
+    t->tabuleiro[m.y][m.x] = m.prev_val;
 }
 
-// Grava a stack de estados num ficheiro
+// Gravar/ler a pilha de movimentos
 void gravarStack(char *nome) {
     FILE *f = fopen(nome, "w");
     if (!f) {
         perror("Erro ao guardar a stack");
         return;
     }
-
-    fprintf(f, "%d\n", topoStack);  // Escreve topo da stack
-
-    // Escreve cada estado da stack
+    fprintf(f, "%d\n", topoStack);
     for (int i = 0; i <= topoStack; i++) {
-        fprintf(f, "%d %d\n", stack[i].linhas, stack[i].colunas);
-        for (int y = 0; y < stack[i].linhas; y++) {
-            for (int x = 0; x < stack[i].colunas; x++) {
-                fputc(stack[i].tabuleiro[y][x], f);
-            }
-            fputc('\n', f);
-        }
+        Move *m = &movestack[i];
+        fprintf(f, "%c %d %d %c %c\n", m->action, m->x, m->y, m->prev_val, m->new_val);
     }
-
     fclose(f);
 }
 
@@ -181,40 +158,32 @@ void gravarJogo(char *nome, Tabuleiro *t) {
     gravarStack("stack.txt");
 }
 
-
-// Lê o histórico da stack de um ficheiro
 void lerStack(char *nome) {
     FILE *f = fopen(nome, "r");
     if (!f) {
         topoStack = -1;
         return;
     }
-
-    // Lê o topo
     if (fscanf(f, "%d\n", &topoStack) != 1) {
         fclose(f);
         topoStack = -1;
         return;
     }
-
-    // Lê os estados
     for (int i = 0; i <= topoStack; i++) {
-        if (fscanf(f, "%d %d\n", &stack[i].linhas, &stack[i].colunas) != 2) {
+        char action, prev_val, new_val;
+        int x, y;
+        if (fscanf(f, " %c %d %d %c %c\n", &action, &x, &y, &prev_val, &new_val) != 5) {
             topoStack = i - 1;
             break;
         }
-
-        for (int y = 0; y < stack[i].linhas; y++) {
-            for (int x = 0; x < stack[i].colunas; x++) {
-                stack[i].tabuleiro[y][x] = fgetc(f);
-            }
-            fgetc(f); // Salta '\n'
-        }
+        movestack[i].action = action;
+        movestack[i].x = x;
+        movestack[i].y = y;
+        movestack[i].prev_val = prev_val;
+        movestack[i].new_val = new_val;
     }
-
     fclose(f);
 }
-
 
 void consumirNovaLinha(FILE *f) {
     int ch;
