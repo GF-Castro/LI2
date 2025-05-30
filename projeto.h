@@ -1,6 +1,7 @@
 #ifndef PROJETO_H
 #define PROJETO_H
 #include <stdbool.h>
+#include <stdio.h>
 // Definição de constantes e structs
 #define tamanhoStack 100
 
@@ -37,13 +38,18 @@ bool verificar_conectividade(Tabuleiro *t);
 void verificar_estado(Tabuleiro *t);
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
 int inferencia_inicial(Tabuleiro *t);
-bool busca_solucao(Tabuleiro *t);
 Tabuleiro copia_tabuleiro(Tabuleiro *t) ;
 bool violacao_basica(Tabuleiro *t);
 bool completo(Tabuleiro *t);
 void comando_R(Tabuleiro *t); 
 void libertar_tabuleiro(Tabuleiro *t);
 Tabuleiro criar_tabuleiro(int l, int c);
+// Inicialização e libertação de estruturas internas
+void init_masks(int linhas, int colunas);
+void free_masks(void);
+void consumirNovaLinha(FILE *f);
+// Solver principal otimizado
+bool busca_solucao(Tabuleiro *t);
 
 
 #endif

@@ -202,35 +202,34 @@ void lerStack(char *nome) {
 }
 
 
-// Lê o estado atual do tabuleiro de um ficheiro
+void consumirNovaLinha(FILE *f) {
+    int ch;
+    while ((ch = fgetc(f)) != EOF && ch != '\n');
+}
+
 void lerJogo(char *nome, Tabuleiro *t) {
     FILE *f = fopen(nome, "r");
     if (!f) { perror("abrir"); return; }
 
     int l, c;
-    if (fscanf(f, "%d %d", &c, &l) != 2) {
+    if (fscanf(f, "%d %d", &l, &c) != 2) { // l = linhas, c = colunas
         fprintf(stderr, "Dimensões inválidas\n");
         fclose(f);
         return;
     }
-    fgetc(f); // come o '\n'
+    consumirNovaLinha(f); // Consome tudo até ao '\n'
 
-    // ALÓCA o tabuleiro com as dimensões l×c
-    *t = criar_tabuleiro(l, c);
+    *t = criar_tabuleiro(l, c); // Aloca l linhas e c colunas
 
-    // Lê o conteúdo
     for (int i = 0; i < l; i++) {
         for (int j = 0; j < c; j++) {
             int ch = fgetc(f);
-            if (ch == EOF) { fprintf(stderr, "Dados insuficientes\n"); break; }
             t->tabuleiro[i][j] = (char)ch;
         }
-        fgetc(f); // salta '\n'
+        consumirNovaLinha(f); // Consome o '\n' no final de cada linha
     }
     fclose(f);
 }
-
-
 // Verifica se todas as casas riscadas estão rodeadas de brancas
 void verificar_riscadas(Tabuleiro *t) {
     for (int i = 0; i < t->linhas; i++) {
