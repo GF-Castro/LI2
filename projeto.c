@@ -28,7 +28,7 @@ int formatoParaCoordenadas(char *input, int *x, int *y) {
     return 1;
 }
 
-void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas) {
+void imprimirTabuleiro(char **tabuleiro, int linhas, int colunas) {
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
             printf("%c ", tabuleiro[i][j]);
@@ -37,7 +37,7 @@ void imprimirTabuleiro(char tabuleiro[26][1000], int linhas, int colunas) {
     }
 }
 
-void pintarDeBranco(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
+void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
         tabuleiro[y][x] = toupper(tabuleiro[y][x]);
     } else {
@@ -45,7 +45,7 @@ void pintarDeBranco(char tabuleiro[26][1000], int linhas, int colunas, int x, in
     }
 }
 
-void riscar(char tabuleiro[26][1000], int linhas, int colunas, int x, int y) {
+void riscar(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
         if (tabuleiro[y][x] != '\0') {
             tabuleiro[y][x] = '#';
@@ -205,36 +205,31 @@ void lerStack(char *nome) {
 // Lê o estado atual do tabuleiro de um ficheiro
 void lerJogo(char *nome, Tabuleiro *t) {
     FILE *f = fopen(nome, "r");
-    if (!f) {
-        printf("Erro ao abrir ficheiro: %s\n", nome);
-        return;
-    }
+    if (!f) { perror("abrir"); return; }
 
-    // Lê dimensões
-    if (fscanf(f, "%d %d", &t->linhas, &t->colunas) != 2) {
-        printf("Erro ao ler dimensões do tabuleiro.\n");
+    int l, c;
+    if (fscanf(f, "%d %d", &c, &l) != 2) {
+        fprintf(stderr, "Dimensões inválidas\n");
         fclose(f);
         return;
     }
+    fgetc(f); // come o '\n'
 
-    fgetc(f);  // Consome '\n' após dimensões
+    // ALÓCA o tabuleiro com as dimensões l×c
+    *t = criar_tabuleiro(l, c);
 
-    // Lê o conteúdo do tabuleiro
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
-            char c = fgetc(f);
-            if (c == EOF) {
-                printf("Erro: Dados insuficientes no ficheiro.\n");
-                fclose(f);
-                return;
-            }
-            t->tabuleiro[i][j] = c;
+    // Lê o conteúdo
+    for (int i = 0; i < l; i++) {
+        for (int j = 0; j < c; j++) {
+            int ch = fgetc(f);
+            if (ch == EOF) { fprintf(stderr, "Dados insuficientes\n"); break; }
+            t->tabuleiro[i][j] = (char)ch;
         }
-        fgetc(f); // Salta '\n'
+        fgetc(f); // salta '\n'
     }
-
     fclose(f);
 }
+
 
 // Verifica se todas as casas riscadas estão rodeadas de brancas
 void verificar_riscadas(Tabuleiro *t) {
@@ -523,68 +518,120 @@ for (int i = 0; i < orig.linhas; i++) {
 }
 
 bool busca_solucao(Tabuleiro *t) {
+    // 1) Se violação básica → falha imediata
+    if (violacao_basica(t)) 
+        return false;
 
-    if (violacao_basica(t)) return false;
+    // 2) Se completo, só falta verificar conectividade
+    if (completo(t)) 
+        return verificar_conectividade(t);
 
-    if (completo(t)) {
-        return verificar_conectividade(t); // Conectividade só no final
-    }
-
-    // 4) Escolha da célula
+    // 3) Escolhe a célula (i,j) com letra minúscula
     int bi = -1, bj = -1;
     for (int i = 0; i < t->linhas && bi < 0; i++) {
         for (int j = 0; j < t->colunas; j++) {
-            if (islower((char)t->tabuleiro[i][j])) {
-                bi = i; bj = j; break;
+            if (islower((unsigned char)t->tabuleiro[i][j])) {
+                bi = i; bj = j;
+                break;
             }
         }
     }
+    // deveria sempre encontrar — mas em caso contrário falha
+    if (bi < 0) return false;
 
-    // 5) Tenta pintar de branco
+    // 4) Tenta pintar de branco (maiúscula)
     {
-        Tabuleiro copia = copia_tabuleiro(t);
-        copia.tabuleiro[bi][bj] = toupper((char)copia.tabuleiro[bi][bj]);
-        if (busca_solucao(&copia)) {
-            *t = copia;
+        char orig = t->tabuleiro[bi][bj];
+        t->tabuleiro[bi][bj] = toupper((unsigned char)orig);
+        if (busca_solucao(t)) 
             return true;
-        }
+        // desfaz
+        t->tabuleiro[bi][bj] = orig;
     }
 
-    // 6) Tenta riscar
+    // 5) Tenta riscar (‘#’)
     {
-        Tabuleiro copia = copia_tabuleiro(t);
-        copia.tabuleiro[bi][bj] = '#';
-        if (!violacao_basica(&copia)) { // Só continua se não houver '#' adjacentes
-            if (busca_solucao(&copia)) {
-                *t = copia;
+        char orig = t->tabuleiro[bi][bj];
+        t->tabuleiro[bi][bj] = '#';
+
+        // só prossegue se não violar já as regras locais
+        if (!violacao_basica(t)) {
+            if (busca_solucao(t)) 
                 return true;
-            }
         }
+
+        // desfaz
+        t->tabuleiro[bi][bj] = orig;
     }
 
+    // 6) Nenhuma das duas opções funcionou:
     return false;
 }
-
 void comando_R(Tabuleiro *t) {
-    Tabuleiro backup = copia_tabuleiro(t);
+    // Faz deep-copy alocando nova matriz
+    Tabuleiro backup = criar_tabuleiro(t->linhas, t->colunas);
+    for (int i = 0; i < t->linhas; i++)
+        memcpy(backup.tabuleiro[i], t->tabuleiro[i], t->colunas);
 
     if (!busca_solucao(t)) {
         printf("Não foi possível resolver o tabuleiro.\n");
+        // liberta a resolução falhada e restaura o original
+        libertar_tabuleiro(t);
         *t = backup;
         return;
     }
 
+    // sucesso: liberta o backup
+    libertar_tabuleiro(&backup);
     printf("Solução encontrada:\n");
     imprimirTabuleiro(t->tabuleiro, t->linhas, t->colunas);
+}
+
+// Aloca um tabuleiro com `l` linhas e `c` colunas:
+Tabuleiro criar_tabuleiro(int l, int c) {
+    Tabuleiro t;
+    t.linhas = l;
+    t.colunas = c;
+    t.tabuleiro = malloc(l * sizeof(char *));
+    if (!t.tabuleiro) { perror("malloc linhas"); exit(1); }
+    for (int i = 0; i < l; i++) {
+        t.tabuleiro[i] = malloc(c * sizeof(char));
+        if (!t.tabuleiro[i]) { perror("malloc colunas"); exit(1); }
+    }
+    return t;
+}
+
+// Liberta toda a memória interna:
+void libertar_tabuleiro(Tabuleiro *t) {
+    for (int i = 0; i < t->linhas; i++) {
+        free(t->tabuleiro[i]);
+    }
+    free(t->tabuleiro);
+    t->tabuleiro = NULL;
 }
 
 Tabuleiro copia_tabuleiro(Tabuleiro *t) {
     Tabuleiro c;
     c.linhas = t->linhas;
     c.colunas = t->colunas;
-    for (int i = 0; i < t->linhas; i++) {
-        memcpy(c.tabuleiro[i], t->tabuleiro[i], t->colunas);
+
+    // Alocar linhas
+    c.tabuleiro = malloc(c.linhas * sizeof(char *));
+    if (!c.tabuleiro) {
+        perror("Erro ao alocar linhas");
+        exit(EXIT_FAILURE);
     }
+
+    // Alocar colunas por linha
+    for (int i = 0; i < c.linhas; i++) {
+        c.tabuleiro[i] = malloc(c.colunas * sizeof(char));
+        if (!c.tabuleiro[i]) {
+            perror("Erro ao alocar colunas");
+            exit(EXIT_FAILURE);
+        }
+        memcpy(c.tabuleiro[i], t->tabuleiro[i], c.colunas * sizeof(char));
+    }
+
     return c;
 }
 
