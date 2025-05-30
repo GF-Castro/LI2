@@ -51,6 +51,4 @@ bool resolver_recursivo(Tabuleiro* t);
 bool validacao_parcial(Tabuleiro* t, int linha, int coluna);
 bool verificar_conectividade(Tabuleiro* t);
 
-
 #endif
-

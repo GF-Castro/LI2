@@ -4,6 +4,16 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+// Função auxiliar para comparar dois tabuleiros (deep compare)
+bool tabuleiros_iguais(Tabuleiro *a, Tabuleiro *b) {
+    if (a->linhas != b->linhas || a->colunas != b->colunas) return false;
+    for (int i = 0; i < a->linhas; i++)
+        for (int j = 0; j < a->colunas; j++)
+            if (a->tabuleiro[i][j] != b->tabuleiro[i][j])
+                return false;
+    return true;
+}
+
 int main() {
     char comando[1000];
     char coord[10];
@@ -73,12 +83,14 @@ int main() {
         else if (strcmp(comando, "A") == 0) {
             guardar_estado(&t); // Guarda o estado inicial
             do {
-                Tabuleiro copia = t; // Cria uma cópia para comparar
+                Tabuleiro copia = copia_tabuleiro(&t); // Cópia profunda
                 aplicar_correcoes(&t);
-                if (memcmp(copia.tabuleiro, t.tabuleiro, sizeof(copia.tabuleiro)) == 0) {
+                if (tabuleiros_iguais(&copia, &t)) {
+                    libertar_tabuleiro(&copia);
                     break; // Sem alterações, sai do ciclo
                 }
                 guardar_estado(&t); // Guarda o estado do jogo depois das alterações
+                libertar_tabuleiro(&copia);
             } while (1);
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
@@ -87,6 +99,9 @@ int main() {
             imprimir_comandos();
         }
     }
+
+    // Libertar tabuleiro principal no fim do programa
+    libertar_tabuleiro(&t);
 
     return 0;
 }

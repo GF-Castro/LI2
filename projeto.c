@@ -89,35 +89,49 @@ void stacks(Tabuleiro estado) {
     }
 }
 
-// Função que retira o último estado guardado (desfazer)
 Tabuleiro desempilhar() {
     if (topoStack >= 0) {
-        return stack[topoStack--];           // Retorna e remove o topo da stack
+        Tabuleiro anterior = stack[topoStack];
+        topoStack--;
+        return anterior;
     } else {
         printf("Stack vazia.\n");
-        Tabuleiro vazio = {{{0}}, 0, 0};     // Retorna tabuleiro vazio em caso de erro
+        Tabuleiro vazio;
+        vazio.tabuleiro = NULL;
+        vazio.linhas = 0;
+        vazio.colunas = 0;
         return vazio;
     }
 }
 
-// Função que guarda o estado atual do tabuleiro na stack
+// Guarda cópia profunda do estado atual do tabuleiro
 void guardar_estado(Tabuleiro *t) {
-    stacks(*t);  // Copia o estado atual para a stack
-}
-
-
-// Função que desfaz a última ação, restaurando o tabuleiro anterior
-void desfazer(Tabuleiro *t) {
-    Tabuleiro tabuleiroAnterior = desempilhar();  // Recupera o estado anterior
-
-    // Só substitui se o estado desempilhado for válido
-    if (tabuleiroAnterior.linhas > 0 && tabuleiroAnterior.colunas > 0) {
-        *t = tabuleiroAnterior;
+    if (topoStack < tamanhoStack - 1) {
+        topoStack++;
+        stack[topoStack] = copia_tabuleiro(t);
     } else {
-        printf("Não é possível desfazer mais ações.\n");
+        printf("Stack cheia. Não é possível guardar mais estados.\n");
     }
 }
 
+// Desfaz a última jogada: liberta o tabuleiro atual e substitui pelo anterior
+void desfazer(Tabuleiro *t) {
+    if (topoStack < 0) {
+        printf("Não é possível desfazer mais ações.\n");
+        return;
+    }
+    // Liberta o tabuleiro atual
+    libertar_tabuleiro(t);
+
+    // Recupera o estado anterior (deep copy)
+    Tabuleiro anterior = desempilhar();
+
+    // Copia os valores para o tabuleiro atual
+    t->linhas = anterior.linhas;
+    t->colunas = anterior.colunas;
+    t->tabuleiro = anterior.tabuleiro; // transfere ownership do ponteiro
+    // (não libertar anterior.tabuleiro aqui! já transferido)
+}
 
 // Grava a stack de estados num ficheiro
 void gravarStack(char *nome) {
@@ -745,10 +759,10 @@ Tabuleiro criar_tabuleiro(int l, int c) {
     return t;
 }
 
+// Liberta toda a memória de um Tabuleiro
 void libertar_tabuleiro(Tabuleiro* t) {
-    for (int i = 0; i < t->linhas; i++) {
-        free(t->tabuleiro[i]);
-    }
+    if (!t->tabuleiro) return;
+    for (int i = 0; i < t->linhas; i++) free(t->tabuleiro[i]);
     free(t->tabuleiro);
     t->tabuleiro = NULL;
 }
@@ -757,24 +771,11 @@ Tabuleiro copia_tabuleiro(Tabuleiro *t) {
     Tabuleiro c;
     c.linhas = t->linhas;
     c.colunas = t->colunas;
-
-    // Alocar linhas
     c.tabuleiro = malloc(c.linhas * sizeof(char *));
-    if (!c.tabuleiro) {
-        perror("Erro ao alocar linhas");
-        exit(EXIT_FAILURE);
-    }
-
-    // Alocar colunas por linha
     for (int i = 0; i < c.linhas; i++) {
         c.tabuleiro[i] = malloc(c.colunas * sizeof(char));
-        if (!c.tabuleiro[i]) {
-            perror("Erro ao alocar colunas");
-            exit(EXIT_FAILURE);
-        }
         memcpy(c.tabuleiro[i], t->tabuleiro[i], c.colunas * sizeof(char));
     }
-
     return c;
 }
 
