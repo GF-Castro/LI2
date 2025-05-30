@@ -36,6 +36,7 @@ void lerStack(char *nome);
 void verificar_riscadas(Tabuleiro *t);
 void verificar_brancas(Tabuleiro *t);
 void verificar_estado(Tabuleiro *t);
+bool e_possivel_resolver (Tabuleiro *t);
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
 int inferencia_inicial(Tabuleiro *t);
 Tabuleiro copia_tabuleiro(Tabuleiro *t) ;

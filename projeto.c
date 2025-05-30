@@ -316,6 +316,50 @@ void verificar_estado(Tabuleiro *t) {
     printf("Verificação concluída.\n");
 }
 
+bool e_possivel_resolver (Tabuleiro *t) {
+    if (!verificar_conectividade(t)) return false;
+
+    // Verifica repetição de letras em linhas
+    for (int i = 0; i < t->linhas; i++) {
+        int cnt[26] = {0};
+        for (int j = 0; j < t->colunas; j++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper(c)) cnt[c - 'A']++;
+        }
+        for (int k = 0; k < 26; k++) {
+            if (cnt[k] > 1) return false;
+        }
+    }
+
+    // Verifica repetição de letras em colunas
+    for (int j = 0; j < t->colunas; j++) {
+        int cnt[26] = {0};
+        for (int i = 0; i < t->linhas; i++) {
+            char c = t->tabuleiro[i][j];
+            if (isupper(c)) cnt[c - 'A']++;
+        }
+        for (int k = 0; k < 26; k++) {
+            if (cnt[k] > 1) return false;
+        }
+    }
+
+    // Verifica casas riscadas rodeadas por brancas
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (t->tabuleiro[i][j] == '#') {
+                int brancas = 0, vizinhas = 0;
+                if (i > 0) { vizinhas++; if (isupper(t->tabuleiro[i-1][j])) brancas++; }
+                if (i < t->linhas - 1) { vizinhas++; if (isupper(t->tabuleiro[i+1][j])) brancas++; }
+                if (j > 0) { vizinhas++; if (isupper(t->tabuleiro[i][j-1])) brancas++; }
+                if (j < t->colunas - 1) { vizinhas++; if (isupper(t->tabuleiro[i][j+1])) brancas++; }
+                if (brancas < vizinhas) return false;
+            }
+        }
+    }
+
+    return true;
+}
+
 
 // Função auxiliar de conectividade
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {

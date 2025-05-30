@@ -63,8 +63,12 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "R") == 0) {
-            guardar_estado(&t);
-            comando_R(&t);
+            if (e_possivel_resolver(&t)) {
+                guardar_estado(&t);
+                comando_R(&t);
+            } else {
+                printf("Erro: o tabuleiro atual viola as regras e não pode ser resolvido.\n");
+            }
         }
         else if (strcmp(comando, "A") == 0) {
             guardar_estado(&t); // Guarda o estado inicial
