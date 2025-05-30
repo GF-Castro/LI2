@@ -126,7 +126,9 @@ void gravarStack(char *nome) {
         perror("Erro ao guardar a stack");
         return;
     }
-    fprintf(f, "%d\n", topoStack);
+    // Grava a quantidade de movimentos (não o índice)
+    fprintf(f, "%d\n", topoStack + 1);
+
     for (int i = 0; i <= topoStack; i++) {
         Move *m = &movestack[i];
         fprintf(f, "%c %d %d %c %c\n", m->action, m->x, m->y, m->prev_val, m->new_val);
@@ -158,18 +160,21 @@ void gravarJogo(char *nome, Tabuleiro *t) {
     gravarStack("stack.txt");
 }
 
+
 void lerStack(char *nome) {
     FILE *f = fopen(nome, "r");
     if (!f) {
         topoStack = -1;
         return;
     }
-    if (fscanf(f, "%d\n", &topoStack) != 1) {
+    int quantidade;
+    if (fscanf(f, "%d\n", &quantidade) != 1) {
         fclose(f);
         topoStack = -1;
         return;
     }
-    for (int i = 0; i <= topoStack; i++) {
+    topoStack = quantidade - 1;
+    for (int i = 0; i < quantidade; i++) {
         char action, prev_val, new_val;
         int x, y;
         if (fscanf(f, " %c %d %d %c %c\n", &action, &x, &y, &prev_val, &new_val) != 5) {
