@@ -303,55 +303,7 @@ void verificar_brancas(Tabuleiro *t) {
     }
 }
 
-// Verifica se todas as casas brancas estão conectadas
-bool verificar_conectividade(Tabuleiro *t) {
-    int L = t->linhas, C = t->colunas;
-    bool visitado[26][1000];
-    memset(visitado, 0, sizeof visitado);
 
-    int total_brancas = 0;
-    int comeco_i = -1, comeco_j = -1;
-
-    // Procura todas as casas brancas e seleciona uma de partida
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < C; j++) {
-            if (isupper(t->tabuleiro[i][j])) {
-                total_brancas++;
-                if (comeco_i < 0) {
-                    comeco_i = i;
-                    comeco_j = j;
-                }
-            }
-        }
-    }
-
-    if (total_brancas <= 1) return true; // Conectividade trivial
-
-    // BFS a partir da casa branca inicial
-    int fila_i[L*C], fila_j[L*C], frente = 0, atras = 0;
-    fila_i[atras] = comeco_i;
-    fila_j[atras++] = comeco_j;
-    visitado[comeco_i][comeco_j] = true;
-    int cont = 1;
-
-    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
-    while (frente < atras) {
-        int ci = fila_i[frente], cj = fila_j[frente++];
-        for (int d = 0; d < 4; d++) {
-            int ni = ci + di[d], nj = cj + dj[d];
-            if (ni >= 0 && ni < L && nj >= 0 && nj < C &&
-                isupper(t->tabuleiro[ni][nj]) && !visitado[ni][nj]) {
-                visitado[ni][nj] = true;
-                fila_i[atras] = ni;
-                fila_j[atras++] = nj;
-                cont++;
-            }
-        }
-    }
-
-    // Se todas as casas brancas foram visitadas, estão conectadas
-    return cont == total_brancas;
-}
 
 // Função principal que junta todas as verificações de regras
 void verificar_estado(Tabuleiro *t) {
@@ -567,41 +519,189 @@ bool busca_solucao(Tabuleiro *t) {
     return false;
 }
 void comando_R(Tabuleiro *t) {
-    // Faz deep-copy alocando nova matriz
-    Tabuleiro backup = criar_tabuleiro(t->linhas, t->colunas);
-    for (int i = 0; i < t->linhas; i++)
-        memcpy(backup.tabuleiro[i], t->tabuleiro[i], t->colunas);
-
-    if (!busca_solucao(t)) {
-        printf("Não foi possível resolver o tabuleiro.\n");
-        // liberta a resolução falhada e restaura o original
-        libertar_tabuleiro(t);
-        *t = backup;
+    // Cria backup do estado atual
+    char** backup = malloc(t->linhas * sizeof(char*));
+    if (!backup) {
+        perror("Erro ao alocar backup");
         return;
     }
+    
+    for (int i = 0; i < t->linhas; i++) {
+        backup[i] = malloc(t->colunas * sizeof(char));
+        if (!backup[i]) {
+            perror("Erro ao alocar linha do backup");
+            // Liberta o que já foi alocado
+            for (int j = 0; j < i; j++) free(backup[j]);
+            free(backup);
+            return;
+        }
+        memcpy(backup[i], t->tabuleiro[i], t->colunas);
+    }
 
-    // sucesso: liberta o backup
-    libertar_tabuleiro(&backup);
-    printf("Solução encontrada:\n");
-    imprimirTabuleiro(t->tabuleiro, t->linhas, t->colunas);
+    // Tenta resolver
+    if (resolver_recursivo(t)) {
+        printf("Solução encontrada:\n");
+        // Usa a função de impressão com a assinatura especificada
+        imprimirTabuleiro(t->tabuleiro, t->linhas, t->colunas);
+    } else {
+        printf("Não foi possível resolver o tabuleiro.\n");
+        // Restaura o estado original
+        for (int i = 0; i < t->linhas; i++) {
+            memcpy(t->tabuleiro[i], backup[i], t->colunas);
+        }
+    }
+
+    // Liberta o backup em ambos os casos
+    for (int i = 0; i < t->linhas; i++) {
+        free(backup[i]);
+    }
+    free(backup);
 }
 
-// Aloca um tabuleiro com `l` linhas e `c` colunas:
+
+// Função recursiva de backtracking (modificação in-place)
+bool resolver_recursivo(Tabuleiro* t) {
+    // Encontra próxima célula não decidida (minúscula)
+    int linha = -1, coluna = -1;
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (islower(t->tabuleiro[i][j])) {
+                linha = i;
+                coluna = j;
+                break;
+            }
+        }
+        if (linha != -1) break;
+    }
+
+    // Todas células decididas - verifica solução completa
+    if (linha == -1) {
+        return verificar_conectividade(t);
+    }
+
+    char original = t->tabuleiro[linha][coluna];
+    
+    // Tenta marcar como branco
+    t->tabuleiro[linha][coluna] = toupper(original);
+    if (validacao_parcial(t, linha, coluna)) {
+        if (resolver_recursivo(t)) return true;
+    }
+    
+    // Tenta marcar como riscado
+    t->tabuleiro[linha][coluna] = '#';
+    if (validacao_parcial(t, linha, coluna)) {
+        if (resolver_recursivo(t)) return true;
+    }
+    
+    // Backtrack: reverte para estado original
+    t->tabuleiro[linha][coluna] = original;
+    return false;
+}
+
+// Função auxiliar: verificação de restrições locais
+bool validacao_parcial(Tabuleiro* t, int linha, int coluna) {
+    char c = t->tabuleiro[linha][coluna];
+    
+    // Se for branco, verifica duplicatas na linha/coluna
+    if (isupper(c)) {
+        // Verifica linha
+        for (int j = 0; j < t->colunas; j++) {
+            if (j != coluna && t->tabuleiro[linha][j] == c) return false;
+        }
+        // Verifica coluna
+        for (int i = 0; i < t->linhas; i++) {
+            if (i != linha && t->tabuleiro[i][coluna] == c) return false;
+        }
+    } 
+    // Se for riscado, verifica vizinhos
+    else if (c == '#') {
+        int viz[4][2] = {{-1,0}, {1,0}, {0,-1}, {0,1}};
+        for (int v = 0; v < 4; v++) {
+            int ni = linha + viz[v][0];
+            int nj = coluna + viz[v][1];
+            if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
+                if (t->tabuleiro[ni][nj] == '#') return false; // Dois riscados adjacentes
+            }
+        }
+    }
+    return true;
+}
+
+// Função auxiliar: verificação de conectividade (DFS)
+void dfs_conectividade(Tabuleiro* t, int i, int j, bool** visitado) {
+    if (i < 0 || i >= t->linhas || j < 0 || j >= t->colunas) return;
+    if (visitado[i][j] || t->tabuleiro[i][j] == '#') return;
+    
+    visitado[i][j] = true;
+    dfs_conectividade(t, i-1, j, visitado); // Cima
+    dfs_conectividade(t, i+1, j, visitado); // Baixo
+    dfs_conectividade(t, i, j-1, visitado); // Esquerda
+    dfs_conectividade(t, i, j+1, visitado); // Direita
+}
+
+// Função principal de verificação de conectividade
+bool verificar_conectividade(Tabuleiro* t) {
+    // Aloca matriz de visitados
+    bool** visitado = malloc(t->linhas * sizeof(bool*));
+    for (int i = 0; i < t->linhas; i++) {
+        visitado[i] = calloc(t->colunas, sizeof(bool));
+    }
+
+    // Encontra primeira célula branca para iniciar DFS
+    bool encontrou_inicio = false;
+    int start_i = -1, start_j = -1;
+    for (int i = 0; i < t->linhas && !encontrou_inicio; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (isupper(t->tabuleiro[i][j])) {
+                start_i = i;
+                start_j = j;
+                encontrou_inicio = true;
+                break;
+            }
+        }
+    }
+
+    // Se não há células brancas, considera inválido
+    if (!encontrou_inicio) {
+        for (int i = 0; i < t->linhas; i++) free(visitado[i]);
+        free(visitado);
+        return false;
+    }
+
+    // Executa DFS a partir da primeira célula branca
+    dfs_conectividade(t, start_i, start_j, visitado);
+
+    // Verifica se todas as brancas foram visitadas
+    bool conectado = true;
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (isupper(t->tabuleiro[i][j]) && !visitado[i][j]) {
+                conectado = false;
+                break;
+            }
+        }
+    }
+
+    // Liberta memória
+    for (int i = 0; i < t->linhas; i++) free(visitado[i]);
+    free(visitado);
+
+    return conectado;
+}
+
+// Funções de criação e libertação do tabuleiro
 Tabuleiro criar_tabuleiro(int l, int c) {
     Tabuleiro t;
     t.linhas = l;
     t.colunas = c;
     t.tabuleiro = malloc(l * sizeof(char *));
-    if (!t.tabuleiro) { perror("malloc linhas"); exit(1); }
     for (int i = 0; i < l; i++) {
         t.tabuleiro[i] = malloc(c * sizeof(char));
-        if (!t.tabuleiro[i]) { perror("malloc colunas"); exit(1); }
     }
     return t;
 }
 
-// Liberta toda a memória interna:
-void libertar_tabuleiro(Tabuleiro *t) {
+void libertar_tabuleiro(Tabuleiro* t) {
     for (int i = 0; i < t->linhas; i++) {
         free(t->tabuleiro[i]);
     }
@@ -728,3 +828,4 @@ void imprimir_comandos() {
     printf("d - Desfazer última ação\n");
     printf("s - Sair\n");
 }
+
