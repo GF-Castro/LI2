@@ -1,4 +1,4 @@
-#include "projeto.h"    
+#include "projeto.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -13,6 +13,7 @@ bool tabuleiros_iguais(Tabuleiro *a, Tabuleiro *b) {
                 return false;
     return true;
 }
+
 int main() {
     char linha[1024];
     char comando[100];
@@ -100,10 +101,10 @@ int main() {
             snprintf(nomeTabuleiro, sizeof(nomeTabuleiro), "%s", current_filename);
             // Para a stack, prefixamos "stack_"
             strcpy(nomeStack, "stack_");
-        strncat(nomeStack,
-        current_filename,
-        sizeof(nomeStack) - strlen(nomeStack) - 1
-       );
+            strncat(nomeStack,
+                    current_filename,
+                    sizeof(nomeStack) - strlen(nomeStack) - 1
+                   );
 
             gravarJogo(nomeTabuleiro, &t, nomeStack);
             printf("Jogo gravado em '%s' e pilha em '%s'.\n",
@@ -169,13 +170,12 @@ int main() {
             }
             comando_R(&t);
         }
-        
         else if (strcmp(comando, "A") == 0) {
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro carregado.\n");
                 continue;
             }
-        
+
             // 1) Repetir aplicar_correcoes até não haver mais alterações
             while (1) {
                 Tabuleiro copia = copiar_tabuleiro(&t);
@@ -186,10 +186,10 @@ int main() {
                 }
                 libertar_tabuleiro(&copia);
             }
-        
+
             // 2) Mostrar o tabuleiro resultante
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
-        
+
             // 3) Se ainda houver minúsculas, informar ao utilizador
             if (tem_minusculas(&t)) {
                 printf(
@@ -198,7 +198,10 @@ int main() {
                 );
             }
         }
-        
+        else {
+            printf("Comando inválido.\n");
+            imprimir_comandos();
+        }
     }
 
     // Antes de terminar, liberta o tabuleiro se existir

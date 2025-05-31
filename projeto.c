@@ -835,8 +835,8 @@ void imprimir_comandos() {
     printf("Comandos disponíveis:\n");
     printf("g - Gravar o jogo atual no ficheiro\n");
     printf("l - Ler o estado do jogo num ficheiro\n");
-    printf("b letra nr - Pintar de branco\n");
-    printf("r letra nr - Riscar\n");
+    printf("b letra numero - Pintar de branco\n");
+    printf("r letra numero - Riscar\n");
     printf("v - Verificar restrições\n");
     printf("a - Aplicar inferências\n");
     printf("A - Repetir inferências até não haver mudanças\n");
