@@ -404,98 +404,87 @@ bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
     return cont == total;
 }
 
-
-// Aplica uma única vez as três regras de inferência (comando 'a'), usando sempre o tabuleiro original
 void aplicar_correcoes(Tabuleiro *t) {
+    // 1) Faz uma cópia “orig” do estado atual do tabuleiro
     Tabuleiro orig = *t;
+
     int alteracoes = 0;
 
-    // Buffer para novo estado
-    char novo[26][1000];
-    for (int i = 0; i < orig.linhas; i++)
-        for (int j = 0; j < orig.colunas; j++)
-            novo[i][j] = orig.tabuleiro[i][j];
+    // 2) Prepara um buffer “novo” para receber as alterações
+    //    (alocamos matriz temporária no mesmo tamanho de orig)
+    char **novo = malloc(orig.linhas * sizeof(char *));
+    if (!novo) { perror("malloc novo linhas"); exit(1); }
+    for (int i = 0; i < orig.linhas; i++) {
+        novo[i] = malloc(orig.colunas * sizeof(char));
+        if (!novo[i]) { perror("malloc novo colunas"); exit(1); }
+        // Copia toda a linha de orig para novo
+        memcpy(novo[i], orig.tabuleiro[i], orig.colunas * sizeof(char));
+    }
 
-    // Regra 1: riscar em 'novo' minúsculas de cada branca em 'orig'
+    // 3) REGRA 1: Para cada branca (maiúscula) em orig, riscar suas réplicas minúsculas em novo
     for (int i = 0; i < orig.linhas; i++) {
         for (int j = 0; j < orig.colunas; j++) {
-            if (isupper((char)orig.tabuleiro[i][j])) {
-                char c = tolower(orig.tabuleiro[i][j]);
+            char c = orig.tabuleiro[i][j];
+            if (isupper((unsigned char)c)) {
+                char minus = tolower((unsigned char)c);
+                // nas colunas da linha i
                 for (int col = 0; col < orig.colunas; col++) {
-                    if (orig.tabuleiro[i][col] == c && novo[i][col] != '#') {
-                        novo[i][col] = '#'; alteracoes++;
+                    if (orig.tabuleiro[i][col] == minus && novo[i][col] != '#') {
+                        novo[i][col] = '#';
                     }
                 }
+                // nas linhas da coluna j
                 for (int lin = 0; lin < orig.linhas; lin++) {
-                    if (orig.tabuleiro[lin][j] == c && novo[lin][j] != '#') {
-                        novo[lin][j] = '#'; alteracoes++;
+                    if (orig.tabuleiro[lin][j] == minus && novo[lin][j] != '#') {
+                        novo[lin][j] = '#';
                     }
                 }
             }
         }
     }
 
-    // Regra 2: pintar vizinhos de '#' em 'orig'
-    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
+    // 4) REGRA 2: Para cada “#” em orig, pintar de branco os vizinhos minúsculos em novo
+    int di[4] = {-1, 1, 0, 0}, dj[4] = {0, 0, -1, 1};
     for (int i = 0; i < orig.linhas; i++) {
         for (int j = 0; j < orig.colunas; j++) {
             if (orig.tabuleiro[i][j] == '#') {
                 for (int d = 0; d < 4; d++) {
                     int ni = i + di[d], nj = j + dj[d];
-                    if (ni >= 0 && ni < orig.linhas && nj >= 0 && nj < orig.colunas
-                        && islower(( char)orig.tabuleiro[ni][nj])
-                        && novo[ni][nj] != toupper((char)orig.tabuleiro[ni][nj])) {
-                        novo[ni][nj] = toupper(( char)orig.tabuleiro[ni][nj]);
-                        alteracoes++;
+                    if (ni >= 0 && ni < orig.linhas && nj >= 0 && nj < orig.colunas) {
+                        char viz = orig.tabuleiro[ni][nj];
+                        if (islower((unsigned char)viz)) {
+                            char mai = toupper((unsigned char)viz);
+                            if (novo[ni][nj] != mai) {
+                                novo[ni][nj] = mai;
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    // Regra 3: evitar isolamento de brancas — usar conexão completa simulada
-// Regra 3 corrigida: evitar isolamento E repetições
-for (int i = 0; i < orig.linhas; i++) {
-    for (int j = 0; j < orig.colunas; j++) {
-        if (islower((char)orig.tabuleiro[i][j])) {
-            // Verifica se riscar isolaria as brancas
-            if (!conexao_valida_apos_risco(&orig, i, j)) {
-                char mai = toupper((char)orig.tabuleiro[i][j]);
-                
-                // Verifica se a conversão para maiúscula é segura
-                bool pode_pintar = true;
-                
-                // Verifica repetição na linha
-                for (int x = 0; x < orig.colunas; x++) {
-                    if (x != j && isupper(novo[i][x]) && novo[i][x] == mai) {
-                        pode_pintar = false;
-                        break;
-                    }
-                }
-                
-                // Verifica repetição na coluna
-                if (pode_pintar) {
-                    for (int y = 0; y < orig.linhas; y++) {
-                        if (y != i && isupper(novo[y][j]) && novo[y][j] == mai) {
-                            pode_pintar = false;
-                            break;
-                        }
-                    }
-                }
-                
-                // Aplica apenas se não houver repetições
-                if (pode_pintar && novo[i][j] != mai) {
-                    novo[i][j] = mai;
-                    alteracoes++;
-                }
+    // 5) Agora percorre “novo” e empilha (guardar_move) qualquer célula que tenha mudado em t->tabuleiro
+    for (int i = 0; i < orig.linhas; i++) {
+        for (int j = 0; j < orig.colunas; j++) {
+            char antes = orig.tabuleiro[i][j];
+            char depois = novo[i][j];
+            if (antes != depois) {
+                // Empilha o movimento para permitir desfazer:
+                // action = 'a', coordenadas (j=coluna, i=linha), prev_val=antes, new_val=depois
+                guardar_move('a', j, i, antes, depois);
+                alteracoes++;
             }
+            // Atualiza o tabuleiro “real” com o novo valor
+            t->tabuleiro[i][j] = depois;
         }
     }
-}
-    // Copia 'novo' para o tabuleiro
-    for (int i = 0; i < orig.linhas; i++)
-        for (int j = 0; j < orig.colunas; j++)
-            t->tabuleiro[i][j] = novo[i][j];
+
+    // 6) Limpa o buffer “novo”
+    for (int i = 0; i < orig.linhas; i++) {
+        free(novo[i]);
+    }
+    free(novo);
 
     printf("Alterações aplicadas: %d\n", alteracoes);
 }
@@ -557,7 +546,7 @@ void comando_R(Tabuleiro *t) {
         perror("Erro ao alocar backup");
         return;
     }
-    
+
     for (int i = 0; i < t->linhas; i++) {
         backup[i] = malloc(t->colunas * sizeof(char));
         if (!backup[i]) {
@@ -589,6 +578,7 @@ void comando_R(Tabuleiro *t) {
     }
     free(backup);
 }
+
 
 
 // Função recursiva de backtracking (modificação in-place)
@@ -741,17 +731,20 @@ void libertar_tabuleiro(Tabuleiro* t) {
     t->tabuleiro = NULL;
 }
 
-Tabuleiro copia_tabuleiro(Tabuleiro *t) {
-    Tabuleiro c;
-    c.linhas = t->linhas;
-    c.colunas = t->colunas;
-    c.tabuleiro = malloc(c.linhas * sizeof(char *));
-    for (int i = 0; i < c.linhas; i++) {
-        c.tabuleiro[i] = malloc(c.colunas * sizeof(char));
-        memcpy(c.tabuleiro[i], t->tabuleiro[i], c.colunas * sizeof(char));
+Tabuleiro copiar_tabuleiro(Tabuleiro *t) {
+    Tabuleiro novo;
+    novo.linhas = t->linhas;
+    novo.colunas = t->colunas;
+
+    novo.tabuleiro = malloc(novo.linhas * sizeof(char*));
+    for (int i = 0; i < novo.linhas; i++) {
+        novo.tabuleiro[i] = malloc(novo.colunas * sizeof(char));
+        memcpy(novo.tabuleiro[i], t->tabuleiro[i], novo.colunas);
     }
-    return c;
+
+    return novo;
 }
+
 
 // Verifica se há alguma violação das regras básicas do jogo
 bool violacao_basica(Tabuleiro *t) {
@@ -848,3 +841,32 @@ void imprimir_comandos() {
     printf("s - Sair\n");
 }
 
+Tabuleiro limpar_tabuleiro(Tabuleiro *t) {
+    Tabuleiro limpo;
+    limpo.linhas = t->linhas;
+    limpo.colunas = t->colunas;
+    limpo.tabuleiro = malloc(t->linhas * sizeof(char *));
+    for (int i = 0; i < t->linhas; i++) {
+        limpo.tabuleiro[i] = malloc(t->colunas * sizeof(char));
+        for (int j = 0; j < t->colunas; j++) {
+            char c = t->tabuleiro[i][j];
+            if (islower((unsigned char)c)) limpo.tabuleiro[i][j] = c;
+            else if (isupper((unsigned char)c)) limpo.tabuleiro[i][j] = tolower(c);
+            else limpo.tabuleiro[i][j] = c == '#' ? '.' : c;  // opcional: substituir '#' por ponto
+        }
+    }
+    return limpo;
+}
+
+
+// Retorna true se existir alguma célula com letra minúscula
+bool tem_minusculas(Tabuleiro *t) {
+    for (int i = 0; i < t->linhas; i++) {
+        for (int j = 0; j < t->colunas; j++) {
+            if (islower((unsigned char)t->tabuleiro[i][j])) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

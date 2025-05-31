@@ -46,7 +46,7 @@ void verificar_estado(Tabuleiro *t);
 bool e_possivel_resolver (Tabuleiro *t);
 bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj);
 int inferencia_inicial(Tabuleiro *t);
-Tabuleiro copia_tabuleiro(Tabuleiro *t);
+Tabuleiro copiar_tabuleiro(Tabuleiro *t);
 bool violacao_basica(Tabuleiro *t);
 bool completo(Tabuleiro *t);
 void comando_R(Tabuleiro *t); 
@@ -57,5 +57,7 @@ void libertar_tabuleiro(Tabuleiro* t);
 bool resolver_recursivo(Tabuleiro* t);
 bool validacao_parcial(Tabuleiro* t, int linha, int coluna);
 bool verificar_conectividade(Tabuleiro* t);
+Tabuleiro limpar_tabuleiro(Tabuleiro *t);
+bool tem_minusculas(Tabuleiro *t);
 
 #endif

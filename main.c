@@ -13,12 +13,6 @@ bool tabuleiros_iguais(Tabuleiro *a, Tabuleiro *b) {
                 return false;
     return true;
 }
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <ctype.h>
-#include "projeto.h"
-
 int main() {
     char linha[1024];
     char comando[100];
@@ -83,45 +77,45 @@ int main() {
             }
         }
         else if (strcmp(comando, "g") == 0) {
-            // comando "g" ou "g <novoBase>"
+            // comando 'g' ou 'g <novoNome>'
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro para gravar. Use 'l <ficheiro>'.\n");
                 continue;
             }
+
+            // Se foi dado um argumento extra (um novo ficheiro), usamos esse
             if (num_args >= 2) {
-                // Usuário digitou "g outroBase"
-                snprintf(current_filename, sizeof(current_filename),
-                         "%s.txt", argumento);
+                // O user digitou "g outroNome" → gravamos em "outroNome.txt"
+                // Atualizamos current_filename para "outroNome.txt"
+                snprintf(current_filename, sizeof(current_filename), "%s.txt", argumento);
             }
-            // Agora current_filename tem o nome do ficheiro (*.txt)
+            // Se não foi dado argumento, current_filename já contém o ficheiro carregado
 
-            {
-                char nomeTabuleiro[256];
-                char nomeStack[256];
+            // Agora construímos os nomes:
+            // current_filename já é algo como "tabuleiro3.txt"
+            char nomeTabuleiro[256], nomeStack[256];
+            // Garantimos que current_filename termina em ".txt"
+            // Se current_filename já tiver a extensão, não alteramos. 
+            // (Aqui assumimos que o utilizador usou ".txt" ao carregar.)
+            snprintf(nomeTabuleiro, sizeof(nomeTabuleiro), "%s", current_filename);
+            // Para a stack, prefixamos "stack_"
+            strcpy(nomeStack, "stack_");
+        strncat(nomeStack,
+        current_filename,
+        sizeof(nomeStack) - strlen(nomeStack) - 1
+       );
 
-                // Nome do tabuleiro = current_filename
-                snprintf(nomeTabuleiro, sizeof(nomeTabuleiro),
-                         "%s", current_filename);
-
-                // Nome da pilha = "stack_<current_filename>"
-                strcpy(nomeStack, "stack_");
-                strncat(nomeStack,
-                        current_filename,
-                        sizeof(nomeStack) - strlen(nomeStack) - 1
-                       );
-
-                gravarJogo(nomeTabuleiro, &t, nomeStack);
-                printf("Jogo gravado em '%s' e pilha em '%s'.\n",
-                       nomeTabuleiro, nomeStack);
-            }
+            gravarJogo(nomeTabuleiro, &t, nomeStack);
+            printf("Jogo gravado em '%s' e pilha em '%s'.\n",
+                   nomeTabuleiro, nomeStack);
         }
         else if (strcmp(comando, "s") == 0) {
-            // comando "s" → sair
+            // comando 's' → sair
             printf("Jogo encerrado.\n");
             break;
         }
         else if (strcmp(comando, "b") == 0 || strcmp(comando, "r") == 0) {
-            // comandos "b <coord>" ou "r <coord>"
+            // comandos 'b <coord>' ou 'r <coord>'
             if (t.tabuleiro == NULL) {
                 printf("Erro: não carregou nenhum tabuleiro. Use 'l <ficheiro>'.\n");
                 continue;
@@ -143,7 +137,7 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "d") == 0) {
-            // comando "d" → desfazer
+            // comando 'd' → desfazer
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro para desfazer.\n");
                 continue;
@@ -152,7 +146,7 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "v") == 0) {
-            // comando "v" → verificar estado
+            // comando 'v' → verificar estado
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro carregado.\n");
                 continue;
@@ -160,7 +154,7 @@ int main() {
             verificar_estado(&t);
         }
         else if (strcmp(comando, "a") == 0) {
-            // comando "a" → aplicar inferências
+            // comando 'a' → aplicar inferências
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro carregado.\n");
                 continue;
@@ -169,38 +163,42 @@ int main() {
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
         }
         else if (strcmp(comando, "R") == 0) {
-            // comando "R" → resolver
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro carregado.\n");
                 continue;
             }
-            if (e_possivel_resolver(&t)) {
-                comando_R(&t);
-            } else {
-                printf("Erro: tabuleiro atual viola regras e não pode ser resolvido.\n");
-            }
+            comando_R(&t);
         }
+        
         else if (strcmp(comando, "A") == 0) {
-            // comando "A" → repetir inferências até estabilizar
             if (t.tabuleiro == NULL) {
                 printf("Erro: não há tabuleiro carregado.\n");
                 continue;
             }
+        
+            // 1) Repetir aplicar_correcoes até não haver mais alterações
             while (1) {
-                Tabuleiro copia = copia_tabuleiro(&t);
+                Tabuleiro copia = copiar_tabuleiro(&t);
                 aplicar_correcoes(&t);
                 if (tabuleiros_iguais(&copia, &t)) {
                     libertar_tabuleiro(&copia);
-                    break;
+                    break;  // não houve alterações → sair do ciclo
                 }
                 libertar_tabuleiro(&copia);
             }
+        
+            // 2) Mostrar o tabuleiro resultante
             imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+        
+            // 3) Se ainda houver minúsculas, informar ao utilizador
+            if (tem_minusculas(&t)) {
+                printf(
+                    "Atenção: o comando 'A' não conseguiu eliminar todas as minúsculas.\n"
+                    "Ainda existem células por decidir que precisam de ação manual.\n"
+                );
+            }
         }
-        else {
-            printf("Comando inválido. Tente novamente.\n");
-            imprimir_comandos();
-        }
+        
     }
 
     // Antes de terminar, liberta o tabuleiro se existir
