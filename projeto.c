@@ -32,6 +32,10 @@ void imprimirTabuleiro(char **tabuleiro, int linhas, int colunas) {
 
 void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
+        if (tabuleiro[y][x] == '#') {
+            printf("Não é possível pintar de branco uma casa já riscada.\n");
+            return;
+        }
         char prev = tabuleiro[y][x];
         char next = toupper(tabuleiro[y][x]);
         guardar_move('b', x, y, prev, next);
