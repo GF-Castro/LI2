@@ -36,10 +36,10 @@ void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
             printf("Não é possível pintar de branco uma casa já riscada.\n");
             return;
         }
-        char prev = tabuleiro[y][x];
-        char next = toupper(tabuleiro[y][x]);
-        guardar_move('b', x, y, prev, next);
-        tabuleiro[y][x] = next;
+        char ant = tabuleiro[y][x];
+        char prox = toupper(tabuleiro[y][x]);
+        guardar_move('b', x, y, ant, prox);
+        tabuleiro[y][x] = prox;
     } else {
         printf("Coordenada fora dos limites.\n");
     }
@@ -47,10 +47,10 @@ void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
 
 void riscar(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
-        char prev = tabuleiro[y][x];
-        char next = '#';
-        guardar_move('r', x, y, prev, next);
-        tabuleiro[y][x] = next;
+        char ant = tabuleiro[y][x];
+        char prox = '#';
+        guardar_move('r', x, y, ant, prox);
+        tabuleiro[y][x] = prox;
     } else {
         printf("Coordenada fora dos limites.\n");
     }
@@ -68,8 +68,8 @@ int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
 
         if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
             char c = t->tabuleiro[ni][nj];
-            if (islower((char)c)) {
-                t->tabuleiro[ni][nj] = toupper((char)c);
+            if (islower(c)) {
+                t->tabuleiro[ni][nj] = toupper(c);
                 alterado = 1;
             }
         }
@@ -101,14 +101,14 @@ Move desempilhar() {
     }
 }
 
-void guardar_move(char action, int x, int y, char prev_val, char new_val) {
+void guardar_move(char ação, int x, int y, char ant_val, char novo_val) {
     if (topoStack < tamanhoStack - 1) {
         topoStack++;
-        movestack[topoStack].action = action;
+        movestack[topoStack].ação = ação;
         movestack[topoStack].x = x;
         movestack[topoStack].y = y;
-        movestack[topoStack].prev_val = prev_val;
-        movestack[topoStack].new_val = new_val;
+        movestack[topoStack].ant_val = ant_val;
+        movestack[topoStack].novo_val = novo_val;
     } else {
         printf("Stack cheia. Não é possível guardar mais movimentos.\n");
     }
@@ -120,7 +120,7 @@ void desfazer(Tabuleiro *t) {
         return;
     }
     Move m = movestack[topoStack--];
-    t->tabuleiro[m.y][m.x] = m.prev_val;
+    t->tabuleiro[m.y][m.x] = m.ant_val;
 }
 
 // Gravar/ler a pilha de movimentos
@@ -135,7 +135,7 @@ void gravarStack(char *nome) {
 
     for (int i = 0; i <= topoStack; i++) {
         Move *m = &movestack[i];
-        fprintf(f, "%c %d %d %c %c\n", m->action, m->x, m->y, m->prev_val, m->new_val);
+        fprintf(f, "%c %d %d %c %c\n", m->ação, m->x, m->y, m->ant_val, m->novo_val);
     }
     fclose(f);
 }
@@ -171,28 +171,34 @@ void lerStack(char *nome) {
         topoStack = -1;
         return;
     }
+
     int quantidade;
     if (fscanf(f, "%d\n", &quantidade) != 1) {
         fclose(f);
         topoStack = -1;
         return;
     }
-    topoStack = quantidade - 1;
+
+    topoStack = -1;
+
     for (int i = 0; i < quantidade; i++) {
-        char action, prev_val, new_val;
+        char ação, ant_val, novo_val;
         int x, y;
-        if (fscanf(f, " %c %d %d %c %c\n", &action, &x, &y, &prev_val, &new_val) != 5) {
-            topoStack = i - 1;
-            break;
+        if (fscanf(f, " %c %d %d %c %c\n", &ação, &x, &y, &ant_val, &novo_val) == 5) {
+            movestack[i].ação = ação;
+            movestack[i].x = x;
+            movestack[i].y = y;
+            movestack[i].ant_val = ant_val;
+            movestack[i].novo_val = novo_val;
+            topoStack = i;
+        } else {
+            i = quantidade; // força a saída
         }
-        movestack[i].action = action;
-        movestack[i].x = x;
-        movestack[i].y = y;
-        movestack[i].prev_val = prev_val;
-        movestack[i].new_val = new_val;
     }
+
     fclose(f);
 }
+
 
 void consumirNovaLinha(FILE *f) {
     int ch;
@@ -222,6 +228,7 @@ void lerJogo(char *nome, Tabuleiro *t) {
     }
     fclose(f);
 }
+
 // Verifica se todas as casas riscadas estão rodeadas de brancas
 void verificar_riscadas(Tabuleiro *t) {
     for (int i = 0; i < t->linhas; i++) {
@@ -425,12 +432,12 @@ void aplicar_correcoes(Tabuleiro *t) {
         memcpy(novo[i], orig.tabuleiro[i], orig.colunas * sizeof(char));
     }
 
-    // 3) REGRA 1: Para cada branca (maiúscula) em orig, riscar suas réplicas minúsculas em novo
+    // 3) REGRA 1: Para cada branca (maiúscula) em orig, riscar as suas réplicas minúsculas em novo
     for (int i = 0; i < orig.linhas; i++) {
         for (int j = 0; j < orig.colunas; j++) {
             char c = orig.tabuleiro[i][j];
-            if (isupper((unsigned char)c)) {
-                char minus = tolower((unsigned char)c);
+            if (isupper( c)) {
+                char minus = tolower( c);
                 // nas colunas da linha i
                 for (int col = 0; col < orig.colunas; col++) {
                     if (orig.tabuleiro[i][col] == minus && novo[i][col] != '#') {
@@ -456,8 +463,8 @@ void aplicar_correcoes(Tabuleiro *t) {
                     int ni = i + di[d], nj = j + dj[d];
                     if (ni >= 0 && ni < orig.linhas && nj >= 0 && nj < orig.colunas) {
                         char viz = orig.tabuleiro[ni][nj];
-                        if (islower((unsigned char)viz)) {
-                            char mai = toupper((unsigned char)viz);
+                        if (islower(viz)) {
+                            char mai = toupper(viz);
                             if (novo[ni][nj] != mai) {
                                 novo[ni][nj] = mai;
                             }
@@ -475,7 +482,7 @@ void aplicar_correcoes(Tabuleiro *t) {
             char depois = novo[i][j];
             if (antes != depois) {
                 // Empilha o movimento para permitir desfazer:
-                // action = 'a', coordenadas (j=coluna, i=linha), prev_val=antes, new_val=depois
+                // ação = 'a', coordenadas (j=coluna, i=linha), ant_val=antes, novo_val=depois
                 guardar_move('a', j, i, antes, depois);
                 alteracoes++;
             }
@@ -504,45 +511,43 @@ bool busca_solucao(Tabuleiro *t) {
 
     // 3) Escolhe a célula (i,j) com letra minúscula
     int bi = -1, bj = -1;
-    for (int i = 0; i < t->linhas && bi < 0; i++) {
-        for (int j = 0; j < t->colunas; j++) {
-            if (islower((unsigned char)t->tabuleiro[i][j])) {
-                bi = i; bj = j;
-                break;
+    int encontrou = 0;
+    for (int i = 0; i < t->linhas && !encontrou; i++) {
+        for (int j = 0; j < t->colunas && !encontrou; j++) {
+            if (islower(t->tabuleiro[i][j])) {
+                bi = i;
+                bj = j;
+                encontrou = 1;
             }
         }
     }
+
     // deveria sempre encontrar — mas em caso contrário falha
-    if (bi < 0) return false;
+    if (bi < 0 || bj < 0) 
+        return false;
 
     // 4) Tenta pintar de branco (maiúscula)
-    {
-        char orig = t->tabuleiro[bi][bj];
-        t->tabuleiro[bi][bj] = toupper((unsigned char)orig);
-        if (busca_solucao(t)) 
-            return true;
-        // desfaz
-        t->tabuleiro[bi][bj] = orig;
-    }
+    char orig = t->tabuleiro[bi][bj];
+    t->tabuleiro[bi][bj] = toupper(orig);
+    if (busca_solucao(t)) 
+        return true;
+
+    // desfaz
+    t->tabuleiro[bi][bj] = orig;
 
     // 5) Tenta riscar (‘#’)
-    {
-        char orig = t->tabuleiro[bi][bj];
-        t->tabuleiro[bi][bj] = '#';
-
-        // só prossegue se não violar já as regras locais
-        if (!violacao_basica(t)) {
-            if (busca_solucao(t)) 
-                return true;
-        }
-
-        // desfaz
-        t->tabuleiro[bi][bj] = orig;
+    t->tabuleiro[bi][bj] = '#';
+    bool resultado = false;
+    if (!violacao_basica(t)) {
+        resultado = busca_solucao(t);
     }
 
-    // 6) Nenhuma das duas opções funcionou:
-    return false;
+    // desfaz
+    t->tabuleiro[bi][bj] = orig;
+
+    return resultado;
 }
+
 void comando_R(Tabuleiro *t) {
     // Cria backup do estado atual
     char** backup = malloc(t->linhas * sizeof(char*));
@@ -584,45 +589,50 @@ void comando_R(Tabuleiro *t) {
 }
 
 
-
-// Função recursiva de backtracking (modificação in-place)
 bool resolver_recursivo(Tabuleiro* t) {
     // Encontra próxima célula não decidida (minúscula)
     int linha = -1, coluna = -1;
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
+    int encontrou = 0;
+    for (int i = 0; i < t->linhas && !encontrou; i++) {
+        for (int j = 0; j < t->colunas && !encontrou; j++) {
             if (islower(t->tabuleiro[i][j])) {
                 linha = i;
                 coluna = j;
-                break;
+                encontrou = 1;
             }
         }
-        if (linha != -1) break;
     }
 
-    // Todas células decididas - verifica solução completa
-    if (linha == -1) {
+    // Todas as células decididas - verifica solução completa
+    if (linha == -1 && coluna == -1) {
         return verificar_conectividade(t);
     }
 
     char original = t->tabuleiro[linha][coluna];
-    
+    bool resultado = false;
+
     // Tenta marcar como branco
     t->tabuleiro[linha][coluna] = toupper(original);
     if (validacao_parcial(t, linha, coluna)) {
-        if (resolver_recursivo(t)) return true;
+        resultado = resolver_recursivo(t);
     }
-    
-    // Tenta marcar como riscado
-    t->tabuleiro[linha][coluna] = '#';
-    if (validacao_parcial(t, linha, coluna)) {
-        if (resolver_recursivo(t)) return true;
+
+    // Se não deu certo, tenta marcar como riscado
+    if (!resultado) {
+        t->tabuleiro[linha][coluna] = '#';
+        if (validacao_parcial(t, linha, coluna)) {
+            resultado = resolver_recursivo(t);
+        }
     }
-    
+
     // Backtrack: reverte para estado original
-    t->tabuleiro[linha][coluna] = original;
-    return false;
+    if (!resultado) {
+        t->tabuleiro[linha][coluna] = original;
+    }
+
+    return resultado;
 }
+
 
 // Função auxiliar: verificação de restrições locais
 bool validacao_parcial(Tabuleiro* t, int linha, int coluna) {
@@ -665,7 +675,6 @@ void dfs_conectividade(Tabuleiro* t, int i, int j, bool** visitado) {
     dfs_conectividade(t, i, j+1, visitado); // Direita
 }
 
-// Função principal de verificação de conectividade
 bool verificar_conectividade(Tabuleiro* t) {
     // Aloca matriz de visitados
     bool** visitado = malloc(t->linhas * sizeof(bool*));
@@ -673,16 +682,19 @@ bool verificar_conectividade(Tabuleiro* t) {
         visitado[i] = calloc(t->colunas, sizeof(bool));
     }
 
-    // Encontra primeira célula branca para iniciar DFS
+    // Encontra primeira célula branca para iniciar DFS 
     bool encontrou_inicio = false;
     int start_i = -1, start_j = -1;
+    bool sair_for_interno = false;
+
     for (int i = 0; i < t->linhas && !encontrou_inicio; i++) {
-        for (int j = 0; j < t->colunas; j++) {
+        sair_for_interno = false;
+        for (int j = 0; j < t->colunas && !sair_for_interno; j++) {
             if (isupper(t->tabuleiro[i][j])) {
                 start_i = i;
                 start_j = j;
                 encontrou_inicio = true;
-                break;
+                sair_for_interno = true;
             }
         }
     }
@@ -697,13 +709,12 @@ bool verificar_conectividade(Tabuleiro* t) {
     // Executa DFS a partir da primeira célula branca
     dfs_conectividade(t, start_i, start_j, visitado);
 
-    // Verifica se todas as brancas foram visitadas
+    // Verifica se todas as brancas foram visitadas 
     bool conectado = true;
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
+    for (int i = 0; i < t->linhas && conectado; i++) {
+        for (int j = 0; j < t->colunas && conectado; j++) {
             if (isupper(t->tabuleiro[i][j]) && !visitado[i][j]) {
                 conectado = false;
-                break;
             }
         }
     }
@@ -714,6 +725,7 @@ bool verificar_conectividade(Tabuleiro* t) {
 
     return conectado;
 }
+
 
 // Funções de criação e libertação do tabuleiro
 Tabuleiro criar_tabuleiro(int l, int c) {
@@ -753,61 +765,62 @@ Tabuleiro copiar_tabuleiro(Tabuleiro *t) {
 // Verifica se há alguma violação das regras básicas do jogo
 bool violacao_basica(Tabuleiro *t) {
     // 1a) Verificar repetições de letras brancas (maiúsculas) nas linhas
-    for (int i = 0; i < t->linhas; i++) {
+    bool violacao = false;
+    for (int i = 0; i < t->linhas && !violacao; i++) {
         int cnt[26] = {0}; // Contador de letras A-Z
-        for (int j = 0; j < t->colunas; j++) {
+        for (int j = 0; j < t->colunas && !violacao; j++) {
             char c = t->tabuleiro[i][j];
-            if (isupper((char)c)) { // Se for uma letra maiúscula
-                if (++cnt[c - 'A'] > 1) return true; // Letra repetida → violação
+            if (isupper(c)) {
+                cnt[c - 'A']++;
+                if (cnt[c - 'A'] > 1) violacao = true; // Letra repetida → violação
             }
         }
     }
 
     // 1b) Verificar repetições de letras brancas (maiúsculas) nas colunas
-    for (int j = 0; j < t->colunas; j++) {
+    for (int j = 0; j < t->colunas && !violacao; j++) {
         int cnt[26] = {0}; // Contador de letras A-Z
-        for (int i = 0; i < t->linhas; i++) {
+        for (int i = 0; i < t->linhas && !violacao; i++) {
             char c = t->tabuleiro[i][j];
-            if (isupper((char)c)) {
-                if (++cnt[c - 'A'] > 1) return true; // Letra repetida → violação
+            if (isupper(c)) {
+                cnt[c - 'A']++;
+                if (cnt[c - 'A'] > 1) violacao = true; // Letra repetida → violação
             }
         }
     }
 
-    // 1c) Verificar se cada célula riscada '#' tem pelo menos um vizinho branco
     int di[] = {-1, 1, 0, 0}; // deslocamentos para cima, baixo, esquerda, direita
     int dj[] = {0, 0, -1, 1};
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
+
+    // 1c) Verificar se cada célula riscada '#' tem pelo menos um vizinho branco
+    for (int i = 0; i < t->linhas && !violacao; i++) {
+        for (int j = 0; j < t->colunas && !violacao; j++) {
             if (t->tabuleiro[i][j] == '#') {
-                bool tem_branco = false; // Flag para saber se há vizinho branco
-                for (int d = 0; d < 4; d++) {
+                bool tem_branco = false;
+                for (int d = 0; d < 4 && !tem_branco; d++) {
                     int ni = i + di[d];
                     int nj = j + dj[d];
-                    // Verifica se a posição vizinha está dentro dos limites do tabuleiro
                     if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
-                        // Se há uma casa branca vizinha
-                        if (isupper((char)t->tabuleiro[ni][nj])) {
+                        if (isupper(t->tabuleiro[ni][nj])) {
                             tem_branco = true;
-                            break;
                         }
                     }
                 }
-                if (!tem_branco) return true; // '#' isolado → violação
+                if (!tem_branco) violacao = true; // '#' isolado → violação
             }
         }
     }
 
     // 1d) Verificar se existem dois '#' adjacentes (não permitido)
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
+    for (int i = 0; i < t->linhas && !violacao; i++) {
+        for (int j = 0; j < t->colunas && !violacao; j++) {
             if (t->tabuleiro[i][j] == '#') {
-                for (int d = 0; d < 4; d++) {
-                    int ni = i + di[d], nj = j + dj[d];
-                    // Verifica se a posição vizinha está dentro do tabuleiro
+                for (int d = 0; d < 4 && !violacao; d++) {
+                    int ni = i + di[d];
+                    int nj = j + dj[d];
                     if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
                         if (t->tabuleiro[ni][nj] == '#') {
-                            return true; // Dois '#' adjacentes → violação
+                            violacao = true; // Dois '#' adjacentes → violação
                         }
                     }
                 }
@@ -815,8 +828,7 @@ bool violacao_basica(Tabuleiro *t) {
         }
     }
 
-    // Nenhuma violação encontrada
-    return false;
+    return violacao;
 }
 
 // 2) Testa se o tabuleiro está completo (não há minúsculas)
@@ -854,8 +866,8 @@ Tabuleiro limpar_tabuleiro(Tabuleiro *t) {
         limpo.tabuleiro[i] = malloc(t->colunas * sizeof(char));
         for (int j = 0; j < t->colunas; j++) {
             char c = t->tabuleiro[i][j];
-            if (islower((unsigned char)c)) limpo.tabuleiro[i][j] = c;
-            else if (isupper((unsigned char)c)) limpo.tabuleiro[i][j] = tolower(c);
+            if (islower( c)) limpo.tabuleiro[i][j] = c;
+            else if (isupper( c)) limpo.tabuleiro[i][j] = tolower(c);
             else limpo.tabuleiro[i][j] = c == '#' ? '.' : c;  // opcional: substituir '#' por ponto
         }
     }
@@ -867,10 +879,20 @@ Tabuleiro limpar_tabuleiro(Tabuleiro *t) {
 bool tem_minusculas(Tabuleiro *t) {
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
-            if (islower((unsigned char)t->tabuleiro[i][j])) {
+            if (islower( t->tabuleiro[i][j])) {
                 return true;
             }
         }
     }
     return false;
+}
+
+// Função auxiliar para comparar dois tabuleiros (deep compare)
+bool tabuleiros_iguais(Tabuleiro *a, Tabuleiro *b) {
+    if (a->linhas != b->linhas || a->colunas != b->colunas) return false;
+    for (int i = 0; i < a->linhas; i++)
+        for (int j = 0; j < a->colunas; j++)
+            if (a->tabuleiro[i][j] != b->tabuleiro[i][j])
+                return false;
+    return true;
 }

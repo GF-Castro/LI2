@@ -12,10 +12,10 @@ typedef struct {
 } Tabuleiro;
 
 typedef struct {
-    char action; // 'r' (riscar), 'b' (pintar)
+    char ação; // 'r' (riscar), 'b' (pintar)
     int x, y;    // coluna, linha
-    char prev_val;
-    char new_val;
+    char ant_val;
+    char novo_val;
 } Move;
 
 // Declaração de variáveis globais, usei extern para evitar duplicação
@@ -59,5 +59,6 @@ bool validacao_parcial(Tabuleiro* t, int linha, int coluna);
 bool verificar_conectividade(Tabuleiro* t);
 Tabuleiro limpar_tabuleiro(Tabuleiro *t);
 bool tem_minusculas(Tabuleiro *t);
+bool tabuleiros_iguais(Tabuleiro *a, Tabuleiro *b);
 
 #endif
