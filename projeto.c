@@ -136,30 +136,30 @@ void gravarStack(char *nome) {
     fclose(f);
 }
 
-// Grava o estado atual do jogo e a stack
-void gravarJogo(char *nome, Tabuleiro *t) {
-    FILE *arquivo = fopen(nome, "w");
+// Função que grava o tabuleiro + stack num ficheiro específico
+void gravarJogo(char *nomeTabuleiro, Tabuleiro *t, char *nomeStack) {
+    // Grava o tabuleiro em "nomeTabuleiro"
+    FILE *arquivo = fopen(nomeTabuleiro, "w");
     if (arquivo == NULL) {
-        perror("Erro ao abrir tabuleiro.txt");
+        perror("Erro ao abrir ficheiro do tabuleiro para gravar");
         return;
     }
 
-    fprintf(arquivo, "%d %d\n", t->colunas, t->linhas);  // Grava dimensões
+    // Grava dimensões: linhas colunas
+    fprintf(arquivo, "%d %d\n", t->linhas, t->colunas);
 
-    // Grava tabuleiro linha por linha
+    // Grava cada linha do tabuleiro
     for (int i = 0; i < t->linhas; i++) {
         for (int j = 0; j < t->colunas; j++) {
             fputc(t->tabuleiro[i][j], arquivo);
         }
         fputc('\n', arquivo);
     }
-
     fclose(arquivo);
 
-    // Também grava a stack
-    gravarStack("stack.txt");
+    // Agora grava a stack de movimentos em "nomeStack"
+    gravarStack(nomeStack);
 }
-
 
 void lerStack(char *nome) {
     FILE *f = fopen(nome, "r");

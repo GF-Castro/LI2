@@ -32,7 +32,7 @@ int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j);
 void aplicar_correcoes(Tabuleiro *t);
 int resolve_jogo(Tabuleiro *t);
 void lerJogo(char *nome, Tabuleiro *t);
-void gravarJogo(char *nome, Tabuleiro *t);
+void gravarJogo(char *nomeTabuleiro, Tabuleiro *t, char *nomeStack);
 void guardar_move(char action, int x, int y, char prev_val, char new_val);
 void desfazer(Tabuleiro *t);
 int formatoParaCoordenadas(char *input, int *x, int *y);
