@@ -501,8 +501,7 @@ void teste_tabuleiros_iguais() {
     Tabuleiro t2 = criar_tabuleiro_teste(2, 2, "ABCD");
     Tabuleiro t3 = criar_tabuleiro_teste(2, 2, "ABCF");
     Tabuleiro t4 = criar_tabuleiro_teste(2, 2, "DCBA");
-    Tabuleiro t5 = criar_tabuleiro_teste(2, 2, "ABCD");
-    t5.linhas = 1; 
+    Tabuleiro t5 = criar_tabuleiro_teste(1, 2, "AB"); // CORRETO: 1 linha, 2 colunas
 
     CU_ASSERT_TRUE(tabuleiros_iguais(&t1, &t2));    
     CU_ASSERT_FALSE(tabuleiros_iguais(&t1, &t3));  
