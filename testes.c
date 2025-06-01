@@ -473,6 +473,49 @@ void teste_copiar_tabuleiro() {
     libertar_tabuleiro(&copia);
 }
 
+void teste_validacao_parcial() {
+    // Tabuleiro 3x3 sem repetições
+    Tabuleiro t1 = criar_tabuleiro_teste(3, 3, "ABCDEFHIJ");
+    CU_ASSERT_TRUE(validacao_parcial(&t1, 0, 0));
+    CU_ASSERT_TRUE(validacao_parcial(&t1, 2, 2));
+
+    Tabuleiro t2 = criar_tabuleiro_teste(3, 3, "AABDEFHIJ");
+    CU_ASSERT_FALSE(validacao_parcial(&t2, 0, 1)); 
+
+    Tabuleiro t3 = criar_tabuleiro_teste(3, 3, "ABCDABHIJ");
+    t3.tabuleiro[0][1] = 'B';
+    t3.tabuleiro[1][1] = 'B'; 
+    CU_ASSERT_FALSE(validacao_parcial(&t3, 1, 1));
+
+    Tabuleiro t4 = criar_tabuleiro(3, 3);
+    CU_ASSERT_TRUE(validacao_parcial(&t4, 0, 0));
+
+    libertar_tabuleiro(&t1);
+    libertar_tabuleiro(&t2);
+    libertar_tabuleiro(&t3);
+    libertar_tabuleiro(&t4);
+}
+
+void teste_tabuleiros_iguais() {
+    Tabuleiro t1 = criar_tabuleiro_teste(2, 2, "ABCD");
+    Tabuleiro t2 = criar_tabuleiro_teste(2, 2, "ABCD");
+    Tabuleiro t3 = criar_tabuleiro_teste(2, 2, "ABCF");
+    Tabuleiro t4 = criar_tabuleiro_teste(2, 2, "DCBA");
+    Tabuleiro t5 = criar_tabuleiro_teste(2, 2, "ABCD");
+    t5.linhas = 1; 
+
+    CU_ASSERT_TRUE(tabuleiros_iguais(&t1, &t2));    
+    CU_ASSERT_FALSE(tabuleiros_iguais(&t1, &t3));  
+    CU_ASSERT_FALSE(tabuleiros_iguais(&t1, &t4));  
+    CU_ASSERT_FALSE(tabuleiros_iguais(&t1, &t5));   
+    
+    libertar_tabuleiro(&t1);
+    libertar_tabuleiro(&t2);
+    libertar_tabuleiro(&t3);
+    libertar_tabuleiro(&t4);
+    libertar_tabuleiro(&t5);
+}
+
 int main() {
     if (CUE_SUCCESS != CU_initialize_registry())
         return CU_get_error();
@@ -514,6 +557,8 @@ int main() {
     CU_add_test(suite, "teste_risco_isolamento", teste_risco_isolamento);
     CU_add_test(suite, "teste_tem_minusculas", teste_tem_minusculas);
     CU_add_test(suite, "teste_copiar_tabuleiro", teste_copiar_tabuleiro);
+    CU_add_test(suite, "teste_validacao_parcial", teste_validacao_parcial);
+    CU_add_test(suite, "teste_tabuleiros_iguais", teste_tabuleiros_iguais);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
