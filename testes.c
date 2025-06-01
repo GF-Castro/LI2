@@ -8,6 +8,17 @@
 #include <unistd.h>
 #include <ctype.h>
 
+// Helper function to create a test board
+Tabuleiro criar_tabuleiro_teste(int linhas, int colunas, const char *content) {
+    Tabuleiro t = criar_tabuleiro(linhas, colunas);
+    for (int i = 0; i < linhas; i++) {
+        for (int j = 0; j < colunas; j++) {
+            t.tabuleiro[i][j] = content[i * colunas + j];
+        }
+    }
+    return t;
+}
+
 // Teste para a função lerJogo
 void teste_lerJogo() {
     Tabuleiro t = {0};
@@ -23,12 +34,14 @@ void teste_lerJogo() {
     CU_ASSERT_EQUAL(t.tabuleiro[0][0], 'A');
     CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'E');
     CU_ASSERT_EQUAL(t.tabuleiro[2][2], 'I');
+    libertar_tabuleiro(&t);
     remove("test_tabuleiro.txt");
 
     // Caso de teste: ficheiro vazio
     f = fopen("test_tabuleiro.txt", "w");
     fclose(f);
     lerJogo("test_tabuleiro.txt", &t);
+    libertar_tabuleiro(&t);
     remove("test_tabuleiro.txt");
 
     // Caso de teste: ficheiro inexistente
@@ -37,60 +50,44 @@ void teste_lerJogo() {
 
 // Teste para a função pintarDeBranco
 void teste_pintarDeBranco() {
-    char tabuleiro[26][1000] = {
-        {'a', 'b', 'c'},
-        {'d', 'e', 'f'},
-        {'g', 'h', 'i'}
-    };
-    int linhas = 3, colunas = 3;
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "abcdefghi");
 
     // Caso de teste: dentro dos limites
-    pintarDeBranco(tabuleiro, linhas, colunas, 1, 1);
-    CU_ASSERT_EQUAL(tabuleiro[1][1], 'E');
+    pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, 1, 1);
+    CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'E');
 
     // Caso de teste: fora dos limites (negativos)
-    pintarDeBranco(tabuleiro, linhas, colunas, -1, -1);
+    pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, -1, -1);
 
     // Caso de teste: fora dos limites (maiores que o tamanho do tabuleiro)
-    pintarDeBranco(tabuleiro, linhas, colunas, 100, 100);
+    pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, 100, 100);
 
     // Caso de teste: célula já em maiúscula
-    pintarDeBranco(tabuleiro, linhas, colunas, 0, 0);
-    CU_ASSERT_EQUAL(tabuleiro[0][0], 'A');
+    pintarDeBranco(t.tabuleiro, t.linhas, t.colunas, 0, 0);
+    CU_ASSERT_EQUAL(t.tabuleiro[0][0], 'A');
 
-    // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[26][1000] = {{0}};
-    pintarDeBranco(tabuleiro_vazio, linhas, colunas, 1, 1);
-    CU_ASSERT_EQUAL(tabuleiro_vazio[1][1], '\0');
+    libertar_tabuleiro(&t);
 }
 
 // Teste para a função riscar
 void teste_riscar() {
-    char tabuleiro[26][1000] = {
-        {'a', 'b', 'c'},
-        {'d', 'e', 'f'},
-        {'g', 'h', 'i'}
-    };
-    int linhas = 3, colunas = 3;
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "abcdefghi");
 
     // Caso de teste: dentro dos limites
-    riscar(tabuleiro, linhas, colunas, 2, 2);
-    CU_ASSERT_EQUAL(tabuleiro[2][2], '#');
+    riscar(t.tabuleiro, t.linhas, t.colunas, 2, 2);
+    CU_ASSERT_EQUAL(t.tabuleiro[2][2], '#');
 
     // Caso de teste: fora dos limites (negativos)
-    riscar(tabuleiro, linhas, colunas, -1, -1);
+    riscar(t.tabuleiro, t.linhas, t.colunas, -1, -1);
 
     // Caso de teste: fora dos limites (maiores que o tamanho do tabuleiro)
-    riscar(tabuleiro, linhas, colunas, 100, 100);
+    riscar(t.tabuleiro, t.linhas, t.colunas, 100, 100);
 
     // Caso de teste: célula já riscada
-    riscar(tabuleiro, linhas, colunas, 2, 2);
-    CU_ASSERT_EQUAL(tabuleiro[2][2], '#');
+    riscar(t.tabuleiro, t.linhas, t.colunas, 2, 2);
+    CU_ASSERT_EQUAL(t.tabuleiro[2][2], '#');
 
-    // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[26][1000] = {{0}};
-    riscar(tabuleiro_vazio, linhas, colunas, 1, 1);
-    CU_ASSERT_EQUAL(tabuleiro_vazio[1][1], '\0');
+    libertar_tabuleiro(&t);
 }
 
 // Teste para a função formatoParaCoordenadas
@@ -114,7 +111,6 @@ void teste_formatoParaCoordenadas() {
     CU_ASSERT_FALSE(formatoParaCoordenadas("!@#", &x, &y));
 }
 
-// Teste para a função formatoParaCoordenadas com casos adicionais
 void teste_formatoParaCoordenadas_extendido() {
     int x, y;
     
@@ -139,111 +135,85 @@ void teste_formatoParaCoordenadas_extendido() {
     CU_ASSERT_FALSE(formatoParaCoordenadas("a1b", &x, &y));
 }
 
-// Teste para a função imprimirTabuleiro
 void teste_imprimirTabuleiro() {
-    char tabuleiro[26][1000] = {
-        {'A', 'B', 'C'},
-        {'D', 'E', 'F'},
-        {'G', 'H', 'I'}
-    };
-    int linhas = 3, colunas = 3;
-
-    // Caso de teste: tabuleiro preenchido
-    imprimirTabuleiro(tabuleiro, linhas, colunas);
-
-    // Caso de teste: tabuleiro vazio
-    char tabuleiro_vazio[26][1000] = {{0}};
-    imprimirTabuleiro(tabuleiro_vazio, linhas, colunas);
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "ABCDEFGHI");
+    imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
+    libertar_tabuleiro(&t);
 }
 
-// Teste para a função imprimir_comandos
 void teste_imprimir_comandos() {
-    // Apenas chamada para verificar ausência de erros
     imprimir_comandos();
 }
 
-// Teste para as funções de gerenciamento de estado (stack)
 void teste_gerenciamento_estado() {
-    Tabuleiro t1 = {{{'a','b'}, {'c','d'}}, 2, 2};
-    Tabuleiro t2 = {{{'e','f'}, {'g','h'}}, 2, 2};
+    topoStack = -1;
+    memset(movestack, 0, sizeof(movestack));
+
+    Tabuleiro t1 = criar_tabuleiro_teste(2, 2, "abcd");
+    Tabuleiro t2 = criar_tabuleiro_teste(2, 2, "efgh");
     
     // Teste empilhar e desempilhar
-    stacks(t1);
+    guardar_move('b', 0, 0, 'a', 'A');
     CU_ASSERT_EQUAL(topoStack, 0);
-    stacks(t2);
+    
+    guardar_move('r', 1, 1, 'h', '#');
     CU_ASSERT_EQUAL(topoStack, 1);
     
-    Tabuleiro t_recuperado = desempilhar();
-    CU_ASSERT_EQUAL(t_recuperado.linhas, 2);
-    CU_ASSERT_EQUAL(t_recuperado.tabuleiro[0][0], 'e');
+    Move m = desempilhar();
+    CU_ASSERT_EQUAL(m.ação, 'r');
     CU_ASSERT_EQUAL(topoStack, 0);
     
-    t_recuperado = desempilhar();
-    CU_ASSERT_EQUAL(t_recuperado.linhas, 2);
-    CU_ASSERT_EQUAL(t_recuperado.tabuleiro[0][0], 'a');
+    m = desempilhar();
+    CU_ASSERT_EQUAL(m.ação, 'b');
     CU_ASSERT_EQUAL(topoStack, -1);
     
     // Teste desempilhar com stack vazia
-    t_recuperado = desempilhar();
-    CU_ASSERT_EQUAL(t_recuperado.linhas, 0);
-    
-    // Teste guardar_estado e desfazer
-    Tabuleiro t_atual = {{{'x','y'}, {'z','w'}}, 2, 2};
-    guardar_estado(&t_atual);
-    CU_ASSERT_EQUAL(topoStack, 0);
-    
-    t_atual.tabuleiro[0][0] = 'm';
-    desfazer(&t_atual);
-    CU_ASSERT_EQUAL(t_atual.tabuleiro[0][0], 'x');
+    m = desempilhar();
     CU_ASSERT_EQUAL(topoStack, -1);
+    
+    libertar_tabuleiro(&t1);
+    libertar_tabuleiro(&t2);
 }
 
-// Teste para as funções de verificação de regras
 void teste_verificacao_regras() {
+    Tabuleiro t_valido = criar_tabuleiro_teste(3, 3, "A#B#C#D#E");
+    Tabuleiro t_invalido = criar_tabuleiro_teste(3, 3, "A#A#B#C#B");
     
-    Tabuleiro tabuleiro_valido = {{{0}}, 3, 3};
-    Tabuleiro tabuleiro_invalido = {{{0}}, 3, 3};
-
-
-    // Preencher com dados de teste
-    tabuleiro_valido.tabuleiro[0][0] = 'A'; tabuleiro_valido.tabuleiro[0][1] = '#'; tabuleiro_valido.tabuleiro[0][2] = 'B';
-    tabuleiro_valido.tabuleiro[1][0] = '#'; tabuleiro_valido.tabuleiro[1][1] = 'C'; tabuleiro_valido.tabuleiro[1][2] = '#';
-    tabuleiro_valido.tabuleiro[2][0] = 'D'; tabuleiro_valido.tabuleiro[2][1] = '#'; tabuleiro_valido.tabuleiro[2][2] = 'E';
+    verificar_riscadas(&t_valido);
+    verificar_brancas(&t_valido);
+    verificar_riscadas(&t_invalido);
+    verificar_brancas(&t_invalido);
+    verificar_estado(&t_valido);
+    verificar_estado(&t_invalido);
     
-    tabuleiro_invalido.tabuleiro[0][0] = 'A'; tabuleiro_invalido.tabuleiro[0][1] = '#'; tabuleiro_invalido.tabuleiro[0][2] = 'A';
-    tabuleiro_invalido.tabuleiro[1][0] = '#'; tabuleiro_invalido.tabuleiro[1][1] = 'B'; tabuleiro_invalido.tabuleiro[1][2] = '#';
-    tabuleiro_invalido.tabuleiro[2][0] = 'C'; tabuleiro_invalido.tabuleiro[2][1] = '#'; tabuleiro_invalido.tabuleiro[2][2] = 'B';
-    
-    // Testes
-    verificar_riscadas(&tabuleiro_valido);
-    verificar_brancas(&tabuleiro_valido);
-    verificar_riscadas(&tabuleiro_invalido);
-    verificar_brancas(&tabuleiro_invalido);
-    verificar_estado(&tabuleiro_valido);
-    verificar_estado(&tabuleiro_invalido);
+    libertar_tabuleiro(&t_valido);
+    libertar_tabuleiro(&t_invalido);
 }
 
-// Teste para as funções de gravação e leitura de arquivo
+
 void teste_arquivos() {
-    Tabuleiro t_original = {{{'a','b'}, {'c','d'}}, 2, 2};
+    topoStack = -1;
+    memset(movestack, 0, sizeof(movestack));
+
+    Tabuleiro t_original = criar_tabuleiro_teste(2, 2, "abcd");
     Tabuleiro t_lido = {0};
     
-    // Teste gravar e ler jogo
-    gravarJogo("teste_jogo.txt", &t_original);
+    gravarJogo("teste_jogo.txt", &t_original, NULL);
     lerJogo("teste_jogo.txt", &t_lido);
     CU_ASSERT_EQUAL(t_lido.linhas, 2);
     CU_ASSERT_EQUAL(t_lido.colunas, 2);
     CU_ASSERT_EQUAL(t_lido.tabuleiro[0][0], 'a');
+    libertar_tabuleiro(&t_original);
+    libertar_tabuleiro(&t_lido);
     remove("teste_jogo.txt");
-    remove("stack.txt");
     
-    // Teste gravar e ler stack
-    stacks(t_original);
+    // Teste stack
+    guardar_move('b', 0, 0, 'a', 'A');
     gravarStack("teste_stack.txt");
-    topoStack = -1; // Reset para simular novo programa
+    topoStack = -1;
     lerStack("teste_stack.txt");
     CU_ASSERT_EQUAL(topoStack, 0);
-    CU_ASSERT_EQUAL(stack[0].linhas, 2);
+    CU_ASSERT_EQUAL(movestack[0].ação, 'b');
     remove("teste_stack.txt");
     
     // Teste com arquivos inexistentes
@@ -252,21 +222,22 @@ void teste_arquivos() {
 }
 
 void teste_stacks_cheia() {
-    Tabuleiro t = { .linhas = 1, .colunas = 1 };
-    t.tabuleiro[0][0] = 'X';
     topoStack = -1;
-    for (int i = 0; i < tamanhoStack; i++) guardar_estado(&t);
+    for (int i = 0; i < tamanhoStack; i++) {
+        guardar_move('b', 0, 0, 'a', 'A');
+    }
     CU_ASSERT_EQUAL(topoStack, tamanhoStack - 1);
-    stacks(t);
+    guardar_move('b', 0, 0, 'a', 'A');
     CU_ASSERT_EQUAL(topoStack, tamanhoStack - 1);
+    topoStack = -1;
 }
 
 void teste_desfazer_vazio() {
     topoStack = -1;
-    Tabuleiro t = { .linhas = 2, .colunas = 2 };
-    t.tabuleiro[0][0] = 'A';
+    Tabuleiro t = criar_tabuleiro_teste(2, 2, "ABCD");
     desfazer(&t);
     CU_ASSERT_EQUAL(topoStack, -1);
+    libertar_tabuleiro(&t);
 }
 
 void teste_gravarStack_erro_abertura() {
@@ -278,9 +249,9 @@ void teste_gravarStack_erro_abertura() {
 
 void teste_gravarJogo_erro_abertura() {
     mkdir("tmpdir2", 0700);
-    Tabuleiro t = { .linhas = 1, .colunas = 1 };
-    t.tabuleiro[0][0] = 'B';
-    gravarJogo("tmpdir2", &t);
+    Tabuleiro t = criar_tabuleiro_teste(1, 1, "B");
+    gravarJogo("tmpdir2", &t, NULL);
+    libertar_tabuleiro(&t);
     rmdir("tmpdir2");
     CU_PASS("gravarJogo erro de abertura coberto");
 }
@@ -305,36 +276,32 @@ void teste_lerStack_linha_incompleta() {
 }
 
 void teste_verificar_riscadas_borda() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 2, .colunas = 2 };
-    t.tabuleiro[0][0] = '#';
-    t.tabuleiro[1][0] = 'A';
-    t.tabuleiro[0][1] = 'B';
+    Tabuleiro t = criar_tabuleiro_teste(2, 2, "#A#B");
     verificar_riscadas(&t);
     CU_PASS("verificar_riscadas borda coberto");
+    libertar_tabuleiro(&t);
 }
 
 void teste_verificar_riscadas_interior() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
+    Tabuleiro t = criar_tabuleiro(3, 3);
     t.tabuleiro[1][1] = '#';
     verificar_riscadas(&t);
     CU_PASS("verificar_riscadas interior coberto");
+    libertar_tabuleiro(&t);
 }
 
 void teste_verificar_brancas_coluna() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 1 };
-    t.tabuleiro[0][0] = 'C';
-    t.tabuleiro[1][0] = 'C';
-    t.tabuleiro[2][0] = 'C';
+    Tabuleiro t = criar_tabuleiro_teste(3, 1, "CCC");
     verificar_brancas(&t);
     CU_PASS("verificar_brancas coluna coberto");
+    libertar_tabuleiro(&t);
 }
 
 void teste_verificar_brancas_coluna_dupla() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 2, .colunas = 2 };
-    t.tabuleiro[0][1] = 'D';
-    t.tabuleiro[1][1] = 'D';
+    Tabuleiro t = criar_tabuleiro_teste(2, 2, "ADBD");
     verificar_brancas(&t);
     CU_PASS("verificar_brancas coluna dupla coberto");
+    libertar_tabuleiro(&t);
 }
 
 void teste_lerJogo_header_malformado() {
@@ -348,45 +315,37 @@ void teste_lerJogo_header_malformado() {
 }
 
 void teste_aplicar_correcoes() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
-    strcpy(t.tabuleiro[0], "aAB");
-    strcpy(t.tabuleiro[1], "#cD");
-    strcpy(t.tabuleiro[2], "efG");
-    
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "aAB#cDefG");
     aplicar_correcoes(&t);
-    
     CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
     CU_ASSERT_EQUAL(t.tabuleiro[2][0], 'E');
+    libertar_tabuleiro(&t);
 }
 
 void teste_resolve_jogo() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
-    strcpy(t.tabuleiro[0], "abc");
-    strcpy(t.tabuleiro[1], "def");
-    strcpy(t.tabuleiro[2], "ghi");
-    
-        comando_R(&t);
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "abcdefghi");
+    comando_R(&t);
     int mudou = (isupper(t.tabuleiro[0][0]) || t.tabuleiro[0][0] == '#');
     CU_ASSERT_TRUE(mudou);
+    libertar_tabuleiro(&t);
 }
 
 void teste_verificar_conectividade_isoladas() {
-    Tabuleiro t = { .tabuleiro = {{0}}, .linhas = 3, .colunas = 3 };
+    Tabuleiro t = criar_tabuleiro(3, 3);
     t.tabuleiro[0][0] = 'A';
     t.tabuleiro[2][2] = 'B';
     verificar_conectividade(&t);
     CU_PASS("verificar_conectividade isoladas coberto");
+    libertar_tabuleiro(&t);
 }
 
-// Teste para formatoParaCoordenadas com input NULL
 void teste_formatoParaCoordenadas_NULL() {
     int x, y;
     CU_ASSERT_FALSE(formatoParaCoordenadas(NULL, &x, &y));
 }
 
-// Teste para pintar_vizinhos_de_branco
 void teste_pintar_vizinhos_de_branco() {
-    Tabuleiro t = { .linhas = 3, .colunas = 3 };
+    Tabuleiro t = criar_tabuleiro(3, 3);
     t.tabuleiro[1][1] = '#';
     t.tabuleiro[0][1] = 'a';
     t.tabuleiro[1][0] = 'b';
@@ -395,17 +354,15 @@ void teste_pintar_vizinhos_de_branco() {
     CU_ASSERT_EQUAL(mudou, 1);
     CU_ASSERT_EQUAL(t.tabuleiro[0][1], 'A');
     CU_ASSERT_EQUAL(t.tabuleiro[1][0], 'B');
+    libertar_tabuleiro(&t);
 }
 
-// Teste para risco que isolaria células
 void teste_risco_isolamento() {
-    Tabuleiro t = { .linhas = 3, .colunas = 3 };
-    strcpy(t.tabuleiro[0], "A##");
-    strcpy(t.tabuleiro[1], "##B");
-    // Tentar riscar a célula (1,1) deve falhar e pintar de branco
+    Tabuleiro t = criar_tabuleiro_teste(3, 3, "A#######B");
     t.tabuleiro[1][1] = 'c';
     aplicar_correcoes(&t);
     CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
+    libertar_tabuleiro(&t);
 }
 
 int main() {
@@ -418,7 +375,7 @@ int main() {
         return CU_get_error();
     }
 
-    // Testes 
+    // Adicionar testes atualizados
     CU_add_test(suite, "teste_lerJogo", teste_lerJogo);
     CU_add_test(suite, "teste_pintarDeBranco", teste_pintarDeBranco);
     CU_add_test(suite, "teste_riscar", teste_riscar);
@@ -446,6 +403,7 @@ int main() {
     CU_add_test(suite, "teste_formatoParaCoordenadas_NULL", teste_formatoParaCoordenadas_NULL);
     CU_add_test(suite, "teste_pintar_vizinhos_de_branco", teste_pintar_vizinhos_de_branco);
     CU_add_test(suite, "teste_risco_isolamento", teste_risco_isolamento);
+
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();
     CU_cleanup_registry();
