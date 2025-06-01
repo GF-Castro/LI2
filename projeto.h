@@ -18,7 +18,7 @@ typedef struct {
     char novo_val;
 } Move;
 
-// Declaração de variáveis globais, usei extern para evitar duplicação
+// Declaração de variáveis globais, extern para evitar duplicação
 extern Move movestack[tamanhoStack];
 extern int topoStack;
 

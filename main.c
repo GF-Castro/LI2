@@ -14,7 +14,7 @@ int main() {
     t.tabuleiro = NULL;
     t.linhas = t.colunas = 0;
 
-    char current_filename[256] = "";
+    char nomedoficheiroatual[256] = "";
 
     imprimir_comandos();
 
@@ -23,7 +23,7 @@ int main() {
     while (!sair) {
         printf("Comando: ");
         if (!fgets(linha, sizeof(linha), stdin)) {
-            sair = 1; // EOF ou erro
+            sair = 1; 
         } else {
             size_t len = strlen(linha);
             if (len > 0 && (linha[len-1] == '\n' || linha[len-1] == '\r')) {
@@ -44,12 +44,12 @@ int main() {
                     lerJogo(argumento, &t);
                     if (t.tabuleiro != NULL) {
                         imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
-                        strncpy(current_filename, argumento, sizeof(current_filename)-1);
-                        current_filename[sizeof(current_filename)-1] = '\0';
+                        strncpy(nomedoficheiroatual, argumento, sizeof(nomedoficheiroatual)-1);
+                        nomedoficheiroatual[sizeof(nomedoficheiroatual)-1] = '\0';
                     }
                     char nomeStack[256];
                     strcpy(nomeStack, "stack_");
-                    strncat(nomeStack, current_filename, sizeof(nomeStack) - strlen(nomeStack) - 1);
+                    strncat(nomeStack, nomedoficheiroatual, sizeof(nomeStack) - strlen(nomeStack) - 1);
                     lerStack(nomeStack);
                 } else {
                     printf("Erro: comando 'l' requer nome do ficheiro (ex: l tabuleiro1.txt)\n");
@@ -58,12 +58,12 @@ int main() {
             } else if (strcmp(comando, "g") == 0) {
                 if (t.tabuleiro != NULL) {
                     if (num_args >= 2) {
-                        snprintf(current_filename, sizeof(current_filename), "%s.txt", argumento);
+                        snprintf(nomedoficheiroatual, sizeof(nomedoficheiroatual), "%s.txt", argumento);
                     }
                     char nomeTabuleiro[256], nomeStack[256];
-                    snprintf(nomeTabuleiro, sizeof(nomeTabuleiro), "%s", current_filename);
+                    snprintf(nomeTabuleiro, sizeof(nomeTabuleiro), "%s", nomedoficheiroatual);
                     strcpy(nomeStack, "stack_");
-                    strncat(nomeStack, current_filename, sizeof(nomeStack) - strlen(nomeStack) - 1);
+                    strncat(nomeStack, nomedoficheiroatual, sizeof(nomeStack) - strlen(nomeStack) - 1);
                     gravarJogo(nomeTabuleiro, &t, nomeStack);
                     printf("Jogo gravado em '%s' e pilha em '%s'.\n", nomeTabuleiro, nomeStack);
                 } else {

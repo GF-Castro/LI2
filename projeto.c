@@ -287,7 +287,7 @@ void aplicar_correcoes(Tabuleiro *t) {
 
     int alteracoes = 0;
 
-    // 2) Prepara um buffer “novo” para receber as alterações
+    // 2) Prepara um buffer novo para receber as alterações
     //    (alocamos matriz temporária no mesmo tamanho de orig)
     char **novo = malloc(orig.linhas * sizeof(char *));
     if (!novo) { perror("malloc novo linhas"); exit(1); }
@@ -389,7 +389,7 @@ void comando_R(Tabuleiro *t) {
     // Tenta resolver
     if (resolver_recursivo(t)) {
         printf("Solução encontrada:\n");
-        // Usa a função de impressão com a assinatura especificada
+
         imprimirTabuleiro(t->tabuleiro, t->linhas, t->colunas);
     } else {
         printf("Não foi possível resolver o tabuleiro.\n");
