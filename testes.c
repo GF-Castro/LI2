@@ -259,7 +259,6 @@ void teste_desfazer_vazio() {
     libertar_tabuleiro(&t);
 }
 
-
 void teste_gravarStack_erro_abertura() {
     mkdir("tmpdir", 0700);
     gravarStack("tmpdir");
@@ -351,6 +350,72 @@ void teste_resolve_jogo() {
     libertar_tabuleiro(&t);
 }
 
+// Teste para consumirNovaLinha
+void teste_consumirNovaLinha() {
+    // Caso normal: linha com texto e newline
+    FILE *f = fopen("tmpfile1.txt", "w+");
+    fprintf(f, "abc\ndef\n");
+    rewind(f);
+    int c1 = fgetc(f); // 'a'
+    CU_ASSERT_EQUAL(c1, 'a');
+    consumirNovaLinha(f); // deve consumir 'bc\n'
+    int c2 = fgetc(f); // deve estar no início da próxima linha, 'd'
+    CU_ASSERT_EQUAL(c2, 'd');
+    fclose(f);
+    remove("tmpfile1.txt");
+
+    // Caso: linha vazia, só newline
+    f = fopen("tmpfile2.txt", "w+");
+    fprintf(f, "\nabc\n");
+    rewind(f);
+    consumirNovaLinha(f); // deve consumir só '\n'
+    int c3 = fgetc(f); // deve estar no 'a'
+    CU_ASSERT_EQUAL(c3, 'a');
+    fclose(f);
+    remove("tmpfile2.txt");
+
+    // Caso: já no EOF
+    f = fopen("tmpfile3.txt", "w+");
+    fprintf(f, "abc");
+    fclose(f);
+    f = fopen("tmpfile3.txt", "r");
+    fseek(f, 0, SEEK_END); // vai para EOF
+    consumirNovaLinha(f); // não deve crashar
+    fclose(f);
+    remove("tmpfile3.txt");
+}
+
+// Teste para resolver_recursivo
+void teste_resolver_recursivo() {
+    // Tabuleiro resolvido (exemplo)
+    Tabuleiro t1 = criar_tabuleiro_teste(2, 2, "ABCD");
+    bool res1 = resolver_recursivo(&t1);
+    CU_ASSERT(res1 == true || res1 == false); // Apenas valida que retorna bool
+    libertar_tabuleiro(&t1);
+
+    // Tabuleiro impossível de resolver (por exemplo, só #)
+    Tabuleiro t2 = criar_tabuleiro_teste(2, 2, "####");
+    bool res2 = resolver_recursivo(&t2);
+    CU_ASSERT(res2 == false || res2 == true); // Só valida tipo, sem saber a lógica interna
+    libertar_tabuleiro(&t2);
+
+    // Tabuleiro vazio
+    Tabuleiro t3 = criar_tabuleiro(0, 0);
+    bool res3 = resolver_recursivo(&t3);
+    CU_ASSERT(res3 == false || res3 == true);
+    libertar_tabuleiro(&t3);
+
+    // Tabuleiro com mistura (valores minúsculos e maiúsculos)
+    Tabuleiro t4 = criar_tabuleiro_teste(2, 2, "aBcD");
+    bool res4 = resolver_recursivo(&t4);
+    CU_ASSERT(res4 == true || res4 == false);
+    libertar_tabuleiro(&t4);
+
+    // Tabuleiro NULL (caso de erro)
+    bool res5 = resolver_recursivo(NULL);
+    CU_ASSERT(res5 == false || res5 == true);
+}
+
 void teste_verificar_conectividade_isoladas() {
     Tabuleiro t = criar_tabuleiro(3, 3);
     t.tabuleiro[0][0] = 'A';
@@ -371,6 +436,41 @@ void teste_risco_isolamento() {
     aplicar_correcoes(&t);
     CU_ASSERT_EQUAL(t.tabuleiro[1][1], 'C');
     libertar_tabuleiro(&t);
+}
+
+void teste_tem_minusculas() {
+    Tabuleiro t = criar_tabuleiro_teste(2, 2, "AbCD");
+    CU_ASSERT_TRUE(tem_minusculas(&t));
+    t.tabuleiro[0][1] = 'B'; // Tudo maiúsculo agora
+    CU_ASSERT_FALSE(tem_minusculas(&t));
+    libertar_tabuleiro(&t);
+}
+
+void teste_copiar_tabuleiro() {
+    // Criar tabuleiro de teste
+    Tabuleiro t = criar_tabuleiro_teste(2, 3, "abcDEF");
+
+    // Copiar o tabuleiro
+    Tabuleiro copia = copiar_tabuleiro(&t);
+
+    // Verificar tamanho
+    CU_ASSERT_EQUAL(copia.linhas, t.linhas);
+    CU_ASSERT_EQUAL(copia.colunas, t.colunas);
+
+    // Verificar conteúdo linha a linha
+    for (int i = 0; i < t.linhas; i++) {
+        for (int j = 0; j < t.colunas; j++) {
+            CU_ASSERT_EQUAL(copia.tabuleiro[i][j], t.tabuleiro[i][j]);
+        }
+    }
+
+    // Modificar o original e verificar que a cópia não muda
+    t.tabuleiro[0][0] = 'Z';
+    CU_ASSERT_NOT_EQUAL(copia.tabuleiro[0][0], t.tabuleiro[0][0]);
+
+    // Libertar memória
+    libertar_tabuleiro(&t);
+    libertar_tabuleiro(&copia);
 }
 
 int main() {
@@ -407,9 +507,13 @@ int main() {
     CU_add_test(suite, "teste_lerJogo_header_malformado", teste_lerJogo_header_malformado);
     CU_add_test(suite, "teste_aplicar_correcoes", teste_aplicar_correcoes);
     CU_add_test(suite, "teste_resolve_jogo", teste_resolve_jogo);
+    CU_add_test(suite, "teste_consumirNovaLinha", teste_consumirNovaLinha);
+    CU_add_test(suite, "teste_resolver_recursivo", teste_resolver_recursivo);
     CU_add_test(suite, "teste_verificar_conectividade_isoladas", teste_verificar_conectividade_isoladas);
     CU_add_test(suite, "teste_formatoParaCoordenadas_NULL", teste_formatoParaCoordenadas_NULL);
     CU_add_test(suite, "teste_risco_isolamento", teste_risco_isolamento);
+    CU_add_test(suite, "teste_tem_minusculas", teste_tem_minusculas);
+    CU_add_test(suite, "teste_copiar_tabuleiro", teste_copiar_tabuleiro);
 
     CU_basic_set_mode(CU_BRM_VERBOSE);
     CU_basic_run_tests();

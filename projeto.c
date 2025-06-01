@@ -161,6 +161,9 @@ void consumirNovaLinha(FILE *f) {
 }
 
 void lerJogo(char *nome, Tabuleiro *t) {
+    t->linhas = 0;
+    t->colunas = 0;
+    t->tabuleiro = NULL;
     FILE *f = fopen(nome, "r");
     if (!f) { perror("abrir"); return; }
 
@@ -396,7 +399,9 @@ void comando_R(Tabuleiro *t) {
 }
 
 
-bool resolver_recursivo(Tabuleiro* t) {
+bool resolver_recursivo(Tabuleiro *t) {
+    if (t == NULL || t->tabuleiro == NULL || t->linhas <= 0 || t->colunas <= 0)
+        return false;
     // Encontra próxima célula não decidida (minúscula)
     int linha = -1, coluna = -1;
     int encontrou = 0;

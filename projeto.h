@@ -40,7 +40,6 @@ void lerStack(char *nome);
 void verificar_riscadas(Tabuleiro *t);
 void verificar_brancas(Tabuleiro *t);
 void verificar_estado(Tabuleiro *t);
-int inferencia_inicial(Tabuleiro *t);
 Tabuleiro copiar_tabuleiro(Tabuleiro *t);
 void comando_R(Tabuleiro *t); 
 void consumirNovaLinha(FILE *f);
