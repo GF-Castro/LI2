@@ -36,6 +36,10 @@ void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
             printf("Não é possível pintar de branco uma casa já riscada.\n");
             return;
         }
+        if (!islower(tabuleiro[y][x])) {
+            printf("Não é possível pintar de branco uma casa que já está branca.\n");
+            return;
+        }
         char ant = tabuleiro[y][x];
         char prox = toupper(tabuleiro[y][x]);
         guardar_move('b', x, y, ant, prox);
@@ -47,6 +51,10 @@ void pintarDeBranco(char **tabuleiro, int linhas, int colunas, int x, int y) {
 
 void riscar(char **tabuleiro, int linhas, int colunas, int x, int y) {
     if (y >= 0 && y < linhas && x >= 0 && x < colunas) {
+        if (tabuleiro[y][x] == '#') {
+            printf("Não é possível riscar uma casa já riscada.\n");
+            return;
+        }
         char ant = tabuleiro[y][x];
         char prox = '#';
         guardar_move('r', x, y, ant, prox);
