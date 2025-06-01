@@ -56,51 +56,6 @@ void riscar(char **tabuleiro, int linhas, int colunas, int x, int y) {
     }
 }
 
-// Função para transformar casas vizinhas de riscas em brancas, retornando se houve mudança
-int pintar_vizinhos_de_branco(Tabuleiro *t, int i, int j) {
-    int alterado = 0;
-    int dx[] = {-1, 1, 0, 0};
-    int dy[] = {0, 0, -1, 1};
-
-    for (int d = 0; d < 4; d++) {
-        int ni = i + dx[d];
-        int nj = j + dy[d];
-
-        if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
-            char c = t->tabuleiro[ni][nj];
-            if (islower(c)) {
-                t->tabuleiro[ni][nj] = toupper(c);
-                alterado = 1;
-            }
-        }
-    }
-
-    return alterado;
-}
-
-// Função para empilhar um movimento (já existe guardar_move, mas podes ter stacks para compatibilidade)
-void stacks(Move movimento) {
-    if (topoStack < tamanhoStack - 1) {
-        topoStack++;
-        movestack[topoStack] = movimento;
-    } else {
-        printf("Stack cheia. Não é possível guardar mais movimentos.\n");
-    }
-}
-
-// Função para desempilhar um movimento
-Move desempilhar() {
-    if (topoStack >= 0) {
-        Move anterior = movestack[topoStack];
-        topoStack--;
-        return anterior;
-    } else {
-        printf("Stack vazia.\n");
-        Move vazio = {'\0', -1, -1, '\0', '\0'};
-        return vazio;
-    }
-}
-
 void guardar_move(char ação, int x, int y, char ant_val, char novo_val) {
     if (topoStack < tamanhoStack - 1) {
         topoStack++;
@@ -315,106 +270,6 @@ void verificar_estado(Tabuleiro *t) {
     printf("Verificação concluída.\n");
 }
 
-bool e_possivel_resolver (Tabuleiro *t) {
-    if (!verificar_conectividade(t)) return false;
-
-    // Verifica repetição de letras em linhas
-    for (int i = 0; i < t->linhas; i++) {
-        int cnt[26] = {0};
-        for (int j = 0; j < t->colunas; j++) {
-            char c = t->tabuleiro[i][j];
-            if (isupper(c)) cnt[c - 'A']++;
-        }
-        for (int k = 0; k < 26; k++) {
-            if (cnt[k] > 1) return false;
-        }
-    }
-
-    // Verifica repetição de letras em colunas
-    for (int j = 0; j < t->colunas; j++) {
-        int cnt[26] = {0};
-        for (int i = 0; i < t->linhas; i++) {
-            char c = t->tabuleiro[i][j];
-            if (isupper(c)) cnt[c - 'A']++;
-        }
-        for (int k = 0; k < 26; k++) {
-            if (cnt[k] > 1) return false;
-        }
-    }
-
-    // Verifica casas riscadas rodeadas por brancas
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
-            if (t->tabuleiro[i][j] == '#') {
-                int brancas = 0, vizinhas = 0;
-                if (i > 0) { vizinhas++; if (isupper(t->tabuleiro[i-1][j])) brancas++; }
-                if (i < t->linhas - 1) { vizinhas++; if (isupper(t->tabuleiro[i+1][j])) brancas++; }
-                if (j > 0) { vizinhas++; if (isupper(t->tabuleiro[i][j-1])) brancas++; }
-                if (j < t->colunas - 1) { vizinhas++; if (isupper(t->tabuleiro[i][j+1])) brancas++; }
-                if (brancas < vizinhas) return false;
-            }
-        }
-    }
-
-    return true;
-}
-
-
-// Função auxiliar de conectividade
-bool conexao_valida_apos_risco(Tabuleiro *orig, int ri, int rj) {
-    // 1) Faz a cópia e aplica o risco
-    Tabuleiro tmp = *orig;
-    tmp.tabuleiro[ri][rj] = '#';
-
-    // 2) Inicializa visitada
-    bool visitada[26][1000];
-    memset(visitada, 0, sizeof visitada);
-
-    // 3) Conta apenas as casas brancas (maiúsculas) e escolhe ponto de partida
-    int total = 0, comeco_i = -1, comeco_j = -1;
-    for (int i = 0; i < tmp.linhas; i++) {
-      for (int j = 0; j < tmp.colunas; j++) {
-        if (isupper((char)tmp.tabuleiro[i][j])) {
-          total++;
-          if (comeco_i < 0) {
-            comeco_i = i; comeco_j = j;
-          }
-        }
-      }
-    }
-
-    // Se não houver ou houver só uma branca, conectividade é trivial
-    if (total <= 1) return true;
-
-    // 4) BFS só sobre as casas brancas
-    int maxq = tmp.linhas * tmp.colunas;
-    int fila_i[maxq], fila_j[maxq];
-    int frente = 0, atras = 0;
-    fila_i[atras] = comeco_i;
-    fila_j[atras++] = comeco_j;
-    visitada[comeco_i][comeco_j] = true;
-    int cont = 1;
-
-    int di[4] = {-1,1,0,0}, dj[4] = {0,0,-1,1};
-    while (frente < atras) {
-        int ci = fila_i[frente], cj = fila_j[frente++];
-        for (int d = 0; d < 4; d++) {
-            int ni = ci + di[d], nj = cj + dj[d];
-            if (ni >= 0 && ni < tmp.linhas && nj >= 0 && nj < tmp.colunas
-             && isupper((char)tmp.tabuleiro[ni][nj])
-             && !visitada[ni][nj]) {
-                visitada[ni][nj] = true;
-                fila_i[atras] = ni;
-                fila_j[atras++] = nj;
-                cont++;
-            }
-        }
-    }
-
-    // 5) Só devolve true se visitou todas as brancas
-    return cont == total;
-}
-
 void aplicar_correcoes(Tabuleiro *t) {
     // 1) Faz uma cópia “orig” do estado atual do tabuleiro
     Tabuleiro orig = *t;
@@ -498,54 +353,6 @@ void aplicar_correcoes(Tabuleiro *t) {
     free(novo);
 
     printf("Alterações aplicadas: %d\n", alteracoes);
-}
-
-bool busca_solucao(Tabuleiro *t) {
-    // 1) Se violação básica → falha imediata
-    if (violacao_basica(t)) 
-        return false;
-
-    // 2) Se completo, só falta verificar conectividade
-    if (completo(t)) 
-        return verificar_conectividade(t);
-
-    // 3) Escolhe a célula (i,j) com letra minúscula
-    int bi = -1, bj = -1;
-    int encontrou = 0;
-    for (int i = 0; i < t->linhas && !encontrou; i++) {
-        for (int j = 0; j < t->colunas && !encontrou; j++) {
-            if (islower(t->tabuleiro[i][j])) {
-                bi = i;
-                bj = j;
-                encontrou = 1;
-            }
-        }
-    }
-
-    // deveria sempre encontrar — mas em caso contrário falha
-    if (bi < 0 || bj < 0) 
-        return false;
-
-    // 4) Tenta pintar de branco (maiúscula)
-    char orig = t->tabuleiro[bi][bj];
-    t->tabuleiro[bi][bj] = toupper(orig);
-    if (busca_solucao(t)) 
-        return true;
-
-    // desfaz
-    t->tabuleiro[bi][bj] = orig;
-
-    // 5) Tenta riscar (‘#’)
-    t->tabuleiro[bi][bj] = '#';
-    bool resultado = false;
-    if (!violacao_basica(t)) {
-        resultado = busca_solucao(t);
-    }
-
-    // desfaz
-    t->tabuleiro[bi][bj] = orig;
-
-    return resultado;
 }
 
 void comando_R(Tabuleiro *t) {
@@ -761,87 +568,6 @@ Tabuleiro copiar_tabuleiro(Tabuleiro *t) {
     return novo;
 }
 
-
-// Verifica se há alguma violação das regras básicas do jogo
-bool violacao_basica(Tabuleiro *t) {
-    // 1a) Verificar repetições de letras brancas (maiúsculas) nas linhas
-    bool violacao = false;
-    for (int i = 0; i < t->linhas && !violacao; i++) {
-        int cnt[26] = {0}; // Contador de letras A-Z
-        for (int j = 0; j < t->colunas && !violacao; j++) {
-            char c = t->tabuleiro[i][j];
-            if (isupper(c)) {
-                cnt[c - 'A']++;
-                if (cnt[c - 'A'] > 1) violacao = true; // Letra repetida → violação
-            }
-        }
-    }
-
-    // 1b) Verificar repetições de letras brancas (maiúsculas) nas colunas
-    for (int j = 0; j < t->colunas && !violacao; j++) {
-        int cnt[26] = {0}; // Contador de letras A-Z
-        for (int i = 0; i < t->linhas && !violacao; i++) {
-            char c = t->tabuleiro[i][j];
-            if (isupper(c)) {
-                cnt[c - 'A']++;
-                if (cnt[c - 'A'] > 1) violacao = true; // Letra repetida → violação
-            }
-        }
-    }
-
-    int di[] = {-1, 1, 0, 0}; // deslocamentos para cima, baixo, esquerda, direita
-    int dj[] = {0, 0, -1, 1};
-
-    // 1c) Verificar se cada célula riscada '#' tem pelo menos um vizinho branco
-    for (int i = 0; i < t->linhas && !violacao; i++) {
-        for (int j = 0; j < t->colunas && !violacao; j++) {
-            if (t->tabuleiro[i][j] == '#') {
-                bool tem_branco = false;
-                for (int d = 0; d < 4 && !tem_branco; d++) {
-                    int ni = i + di[d];
-                    int nj = j + dj[d];
-                    if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
-                        if (isupper(t->tabuleiro[ni][nj])) {
-                            tem_branco = true;
-                        }
-                    }
-                }
-                if (!tem_branco) violacao = true; // '#' isolado → violação
-            }
-        }
-    }
-
-    // 1d) Verificar se existem dois '#' adjacentes (não permitido)
-    for (int i = 0; i < t->linhas && !violacao; i++) {
-        for (int j = 0; j < t->colunas && !violacao; j++) {
-            if (t->tabuleiro[i][j] == '#') {
-                for (int d = 0; d < 4 && !violacao; d++) {
-                    int ni = i + di[d];
-                    int nj = j + dj[d];
-                    if (ni >= 0 && ni < t->linhas && nj >= 0 && nj < t->colunas) {
-                        if (t->tabuleiro[ni][nj] == '#') {
-                            violacao = true; // Dois '#' adjacentes → violação
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return violacao;
-}
-
-// 2) Testa se o tabuleiro está completo (não há minúsculas)
-bool completo(Tabuleiro *t) {
-    for (int i = 0; i < t->linhas; i++) {
-        for (int j = 0; j < t->colunas; j++) {
-            if (islower((char)t->tabuleiro[i][j]))
-                return false;
-        }
-    }
-    return true;
-}
-
 // Funções de interface
 void imprimir_comandos() {
     printf("Comandos disponíveis:\n");
@@ -856,24 +582,6 @@ void imprimir_comandos() {
     printf("d - Desfazer última ação\n");
     printf("s - Sair\n");
 }
-
-Tabuleiro limpar_tabuleiro(Tabuleiro *t) {
-    Tabuleiro limpo;
-    limpo.linhas = t->linhas;
-    limpo.colunas = t->colunas;
-    limpo.tabuleiro = malloc(t->linhas * sizeof(char *));
-    for (int i = 0; i < t->linhas; i++) {
-        limpo.tabuleiro[i] = malloc(t->colunas * sizeof(char));
-        for (int j = 0; j < t->colunas; j++) {
-            char c = t->tabuleiro[i][j];
-            if (islower( c)) limpo.tabuleiro[i][j] = c;
-            else if (isupper( c)) limpo.tabuleiro[i][j] = tolower(c);
-            else limpo.tabuleiro[i][j] = c == '#' ? '.' : c;  // opcional: substituir '#' por ponto
-        }
-    }
-    return limpo;
-}
-
 
 // Retorna true se existir alguma célula com letra minúscula
 bool tem_minusculas(Tabuleiro *t) {

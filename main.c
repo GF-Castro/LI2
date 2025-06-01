@@ -126,18 +126,18 @@ int main() {
 
             } else if (strcmp(comando, "A") == 0) {
                 if (t.tabuleiro != NULL) {
-                    while (1) {
-                        Tabuleiro copia = copiar_tabuleiro(&t);
-                        aplicar_correcoes(&t);
-                        if (tabuleiros_iguais(&copia, &t)) {
-                            libertar_tabuleiro(&copia);
-                            break;
-                        }
+                    Tabuleiro copia = copiar_tabuleiro(&t);
+                    aplicar_correcoes(&t);
+            
+                    while (!tabuleiros_iguais(&copia, &t)) {
                         libertar_tabuleiro(&copia);
+                        copia = copiar_tabuleiro(&t);
+                        aplicar_correcoes(&t);
                     }
-
+            
+                    libertar_tabuleiro(&copia);
                     imprimirTabuleiro(t.tabuleiro, t.linhas, t.colunas);
-
+            
                     if (tem_minusculas(&t)) {
                         printf(
                             "Atenção: o comando 'A' não conseguiu eliminar todas as minúsculas.\n"
@@ -147,7 +147,6 @@ int main() {
                 } else {
                     printf("Erro: não há tabuleiro carregado.\n");
                 }
-
             } else {
                 printf("Comando inválido.\n");
                 imprimir_comandos();
