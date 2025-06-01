@@ -56,9 +56,10 @@ compMain:
 # mostra comandos disponíveis
 help:
 	@echo "Comandos disponíveis:"
-	@echo "  make all      - Compila todos os ficheiros"
-	@echo "  make run    	- Executa o jogo"
-	@echo "  make test   	- Compila e executa os testes"
-	@echo "  make gcov   	- Gera relatório de cobertura"
-	@echo "  make clean  	- Remove ficheiros temporários"
-	@echo "  make rebuild	- Limpa e recompila todos os ficheiros"
+	@echo "  make all      		- Compila todos os ficheiros"
+	@echo "  make run    			- Executa o jogo"
+	@echo "  make test   			- Compila e executa os testes"
+	@echo "  make gcov   			- Gera relatório de cobertura"
+	@echo "  make clean  			- Remove ficheiros temporários"
+	@echo "  make rebuild			- Limpa e recompila todos os ficheiros"
+	@echo "  make comp(Proj/Main)		- pmccabe de projeto.c e main.c respetivamente"
